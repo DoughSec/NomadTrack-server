@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @NoArgsConstructor
-@Table(name = "trips")
-public class Trip {
+@Table(name = "wishlists")
+public class Wishlist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -27,30 +27,24 @@ public class Trip {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "city")
-    private String city;
-
-    @Column(name = "country")
-    private String country;
-
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    @Column(name = "end_date")
-    private LocalDate endDate;
-
     @Lob
-    @Column(name = "notes")
-    private String notes;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "latitude")
-    private BigDecimal latitude;
+    @Column(name = "target_country")
+    private String target_country;
 
-    @Column(name = "longitude")
-    private BigDecimal longitude;
+    @Column(name = "target_city")
+    private String target_city;
 
-    @Column(name = "visibility")
-    private String visibility;
+    @Column(name = "deadline")
+    private LocalDate deadline;
+
+    @Column(name = "is_completed")
+    private boolean isCompleted;
+
+    @Column(name = "completed_date")
+    private LocalDate completedDate;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
