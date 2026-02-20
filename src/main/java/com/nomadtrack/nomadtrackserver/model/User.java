@@ -25,6 +25,9 @@ public abstract class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "avatar_url")
+    private String avatarURL;
+
     @Column(name = "email", nullable = false)
     private String email;
 
