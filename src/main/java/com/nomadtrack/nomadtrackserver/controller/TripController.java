@@ -59,15 +59,15 @@ public class TripController {
     //update Trip record
     @PutMapping("/{tripId}")
     @ResponseStatus(HttpStatus.OK)
-    public Trip updateTrip(@PathVariable("tripId") Integer id, @RequestBody Trip trip) {
-        return tripService.update(id, trip);
+    public Trip updateTrip(@PathVariable("tripId") Integer tripId, @RequestBody Trip trip) {
+        return tripService.update(tripId, trip);
     }
 
     //delete Trip record
     @DeleteMapping("/{tripId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTrip(@PathVariable("id") Integer id) {
-        tripService.delete(id);
+    public void deleteTrip(@PathVariable("tripId") Integer tripId) {
+        tripService.delete(tripId);
     }
 
 }
