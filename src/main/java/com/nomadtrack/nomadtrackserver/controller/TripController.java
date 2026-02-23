@@ -43,9 +43,9 @@ public class TripController {
     }
 
     //get Trip by id
-    @GetMapping("/{id}")
+    @GetMapping("/{tripId}")
     @ResponseStatus(HttpStatus.OK)
-    public Trip getTripById(@PathVariable("id") Integer id) {
+    public Trip getTripById(@PathVariable("tripId") Integer id) {
         return tripService.getById(id);
     }
 
@@ -57,14 +57,14 @@ public class TripController {
     }
 
     //update Trip record
-    @PutMapping("/{id}")
+    @PutMapping("/{tripId}")
     @ResponseStatus(HttpStatus.OK)
-    public Trip updateTrip(@PathVariable("id") Integer id, @RequestBody Trip trip) {
+    public Trip updateTrip(@PathVariable("tripId") Integer id, @RequestBody Trip trip) {
         return tripService.update(id, trip);
     }
 
     //delete Trip record
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{tripId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTrip(@PathVariable("id") Integer id) {
         tripService.delete(id);
