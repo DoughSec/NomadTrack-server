@@ -2,6 +2,7 @@ package com.nomadtrack.nomadtrackserver.controller;
 
 import com.nomadtrack.nomadtrackserver.model.TripLike;
 import com.nomadtrack.nomadtrackserver.model.dto.CommentRequest;
+import com.nomadtrack.nomadtrackserver.model.dto.TripLikeDto;
 import com.nomadtrack.nomadtrackserver.service.TripLikeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class TripLikeController {
     //create TripLike record
     @PostMapping("/{tripId}/likes")
     @ResponseStatus(HttpStatus.CREATED)
-    public TripLike create(@PathVariable Integer tripId, @RequestBody CommentRequest request) {
+    public TripLike create(@PathVariable Integer tripId, @RequestBody TripLikeDto request) {
         return tripLikeService.create(
                 tripId,
                 request.getUserId()
