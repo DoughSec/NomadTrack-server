@@ -1,7 +1,6 @@
 package com.nomadtrack.nomadtrackserver.controller;
 
 import com.nomadtrack.nomadtrackserver.model.Wishlist;
-import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.WishlistCompleteRequest;
 import com.nomadtrack.nomadtrackserver.service.WishlistService;
 import org.springframework.http.HttpStatus;
@@ -42,30 +41,30 @@ public class WishlistController {
     }
 
     //get Wishlist by id
-    @GetMapping("/{id}")
+    @GetMapping("/{wishlistId}")
     @ResponseStatus(HttpStatus.OK)
-    public Wishlist getWishlistById(@PathVariable("id") Integer id) {
+    public Wishlist getWishlistById(@PathVariable("wishlistId") Integer id) {
         return wishlistService.getById(id);
     }
 
     //mark complete
-    @PatchMapping("/{id}/complete")
-    public Wishlist markComplete(@PathVariable Integer id,
+    @PatchMapping("/{wishlistId}/complete")
+    public Wishlist markComplete(@PathVariable("wishlistId") Integer id,
                                  @RequestBody WishlistCompleteRequest request) {
         return wishlistService.markComplete(id, request.isCompleted());
     }
 
     //update Wishlist record
-    @PutMapping("/{id}")
+    @PutMapping("/{wishlistId}")
     @ResponseStatus(HttpStatus.OK)
-    public Wishlist updateWishlist(@PathVariable("id") Integer id, @RequestBody Wishlist wishlist) {
+    public Wishlist updateWishlist(@PathVariable("wishlistId") Integer id, @RequestBody Wishlist wishlist) {
         return wishlistService.update(id, wishlist);
     }
 
     //delete Wishlist record
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{wishlistId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteWishlist(@PathVariable("id") Integer id) {
+    public void deleteWishlist(@PathVariable("wishlistId") Integer id) {
         wishlistService.delete(id);
     }
 
