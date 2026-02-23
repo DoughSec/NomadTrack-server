@@ -31,10 +31,10 @@ public class Wishlist {
     private String description;
 
     @Column(name = "target_country")
-    private String target_country;
+    private String targetCountry;
 
     @Column(name = "target_city")
-    private String target_city;
+    private String targetCity;
 
     @Column(name = "deadline")
     private LocalDate deadline;
