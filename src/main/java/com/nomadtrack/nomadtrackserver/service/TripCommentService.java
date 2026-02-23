@@ -3,6 +3,7 @@ package com.nomadtrack.nomadtrackserver.service;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
+import com.nomadtrack.nomadtrackserver.model.dto.CommentRequest;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripCommentRepository;
@@ -68,10 +69,10 @@ public class TripCommentService {
     }
 
     // update TripComment
-    public TripComment update(Integer tripCommentId, TripComment updated) {
+    public TripComment update(Integer tripCommentId, String comment) {
         TripComment existing = getById(tripCommentId);
 
-        existing.setComment(updated.getComment());
+        existing.setComment(comment);
 
         return tripCommentRepository.save(existing);
     }
