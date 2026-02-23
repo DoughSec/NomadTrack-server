@@ -76,6 +76,21 @@ public class WishlistService {
                 .orElseThrow(() -> new IllegalArgumentException("Wishlist not found: " + wishlistId));
     }
 
+    // patch update complete
+    public Wishlist markComplete(Integer wishlistId, boolean completed) {
+        Wishlist existing = getById(wishlistId);
+        existing.setCompleted(completed);
+
+        if (completed) {
+            existing.setCompletedDate(LocalDate.now());
+        } else {
+            existing.setCompletedDate(null);
+        }
+
+        return wishlistRepository.save(existing);
+    }
+
+
     // update Wishlist
     public Wishlist update(Integer WishlistId, Wishlist updated) {
         Wishlist existing = getById(WishlistId);
