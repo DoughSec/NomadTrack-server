@@ -9,5 +9,4 @@ import java.util.List;
 @Repository
 public interface TripCommentRepository extends JpaRepository<TripComment, Integer> {
     List<TripComment> findAllByTrip_IdOrderByCreatedAtAsc(Integer tripId);
-    List<TripComment> findAllByUser_Id(Integer userId);
 }
