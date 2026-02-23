@@ -1,6 +1,7 @@
 package com.nomadtrack.nomadtrackserver.service;
 
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +53,7 @@ public class UserService {
     }
 
     // update User
-    public User update(Integer userId, User updated) {
+    public User update(Integer userId, UserProfileDto updated) {
         User existing = getById(userId);
 
         existing.setFirstName(updated.getFirstName());
@@ -62,7 +63,6 @@ public class UserService {
         existing.setPasswordHash(updated.getPasswordHash());
         existing.setBio(updated.getBio());
         existing.setAddress(updated.getAddress());
-        existing.setRole(updated.getRole());
 
         return userRepository.save(existing);
     }
