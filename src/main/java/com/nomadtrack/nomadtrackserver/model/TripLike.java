@@ -20,6 +20,10 @@ import java.time.LocalDateTime;
 
 public class TripLike {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "trip_id",
