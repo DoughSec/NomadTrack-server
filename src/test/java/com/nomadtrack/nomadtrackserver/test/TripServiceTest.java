@@ -44,8 +44,6 @@ public class TripServiceTest {
         trip = new Trip();
         trip.setId(1);
         trip.setUser(user);
-        //Integer userId, String title, String city, String country, LocalDate startDate, LocalDate endDate,
-        //            String notes, BigDecimal latitude, BigDecimal longitude, String visibility
         trip.setTitle("testTitle");
         trip.setCity("testCity");
         trip.setCountry("testCountry");
