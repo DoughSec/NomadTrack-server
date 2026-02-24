@@ -45,7 +45,6 @@ public class WishlistService {
         wishlist.setTargetCity(targetCity);
         wishlist.setDeadline(deadline);
         wishlist.setCompleted(isCompleted);
-        wishlist.setDeadline(deadline);
         wishlist.setCompletedDate(completedDAte);
 
         return wishlistRepository.save(wishlist);
