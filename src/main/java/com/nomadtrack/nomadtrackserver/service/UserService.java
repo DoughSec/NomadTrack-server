@@ -3,6 +3,7 @@ package com.nomadtrack.nomadtrackserver.service;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +14,11 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // create User
@@ -32,6 +35,19 @@ public class UserService {
         user.setBio(bio);
         user.setAddress(address);
         user.setRole(role);
+
+        return userRepository.save(user);
+    }
+
+    // registration for users
+    public User register(
+            String firstName, String lastName, String email, String password
+    ) {
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setPasswordHash(this.passwordEncoder.encode(password));
 
         return userRepository.save(user);
     }

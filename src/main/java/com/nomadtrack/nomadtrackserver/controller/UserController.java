@@ -21,7 +21,7 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
-    //get all User records
+    //get all User records / search users
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<User> getAll() {
