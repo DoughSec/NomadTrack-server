@@ -67,4 +67,11 @@ public class AuthenticationService {
                 user.getAvatarURL()
         );
     }
+
+    public String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Missing or invalid Authorization header");
+        }
+        return authorizationHeader.substring(7);
+    }
 }

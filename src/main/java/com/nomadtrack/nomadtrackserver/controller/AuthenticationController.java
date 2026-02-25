@@ -6,10 +6,7 @@ import com.nomadtrack.nomadtrackserver.service.AuthenticationService;
 import com.nomadtrack.nomadtrackserver.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @AllArgsConstructor
@@ -39,14 +36,8 @@ public class AuthenticationController {
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
     public UserMeResponse me(@RequestHeader("Authorization") String authorizationHeader) {
-        String token = extractBearerToken(authorizationHeader);
+        String token = authenticationService.extractBearerToken(authorizationHeader);
         return authenticationService.me(token);
     }
 
-    private String extractBearerToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Missing or invalid Authorization header");
-        }
-        return authorizationHeader.substring(7);
-    }
 }

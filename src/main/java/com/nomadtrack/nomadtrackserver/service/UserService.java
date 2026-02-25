@@ -1,9 +1,12 @@
 package com.nomadtrack.nomadtrackserver.service;
 
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserSearchProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
+import com.nomadtrack.nomadtrackserver.security.JwtUtils;
+import io.jsonwebtoken.Claims;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +20,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
     }
 
     // create User
@@ -87,19 +92,62 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
     }
 
-    // update User
-    public User update(Integer userId, UserProfileDto updated) {
-        User existing = getById(userId);
+    // getByFirstName
+    @Transactional(readOnly = true)
+    public List<UserSearchProfileDto> getByFirstName(String firstName) {
+        List<User> users = userRepository.findByFirstNameIgnoreCase(firstName);
+        List<UserSearchProfileDto> userSearchProfileDtos = new ArrayList<>();
+        for (User user : users) {
+            UserSearchProfileDto userSearchProfileDto = new UserSearchProfileDto();
+            userSearchProfileDto.setFirstName(user.getFirstName());
+            userSearchProfileDto.setLastName(user.getLastName());
+            userSearchProfileDto.setAvatarURL(user.getAvatarURL());
+            userSearchProfileDto.setBio(user.getBio());
+            userSearchProfileDtos.add(userSearchProfileDto);
+        }
+        if (firstName == null) {
+            throw new IllegalArgumentException("No user exists with name: " + firstName);
+        }
+        return userSearchProfileDtos;
+    }
 
-        existing.setFirstName(updated.getFirstName());
-        existing.setLastName(updated.getLastName());
-        existing.setAvatarURL(updated.getAvatarURL());
-        existing.setEmail(updated.getEmail());
-        existing.setPasswordHash(updated.getPasswordHash());
-        existing.setBio(updated.getBio());
-        existing.setAddress(updated.getAddress());
 
-        return userRepository.save(existing);
+    // update logged in user
+    public UserMeResponse update(Integer userId, UserProfileDto dto) {
+
+        User existing = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Only update fields that are allowed to change
+        if (dto.getFirstName() != null) {
+            existing.setFirstName(dto.getFirstName());
+        }
+
+        if (dto.getLastName() != null) {
+            existing.setLastName(dto.getLastName());
+        }
+
+        if (dto.getBio() != null) {
+            existing.setBio(dto.getBio());
+        }
+
+        if (dto.getAvatarURL() != null) {
+            existing.setAvatarURL(dto.getAvatarURL());
+        }
+
+        if (dto.getAddress() != null) {
+            existing.setAddress(dto.getAddress());
+        }
+
+        UserMeResponse userMeResponse = new UserMeResponse();
+        userMeResponse.setBio(dto.getBio());
+        userMeResponse.setFirstName(dto.getFirstName());
+        userMeResponse.setLastName(dto.getLastName());
+        userMeResponse.setAddress(dto.getAddress());
+
+        userRepository.save(existing);
+
+        return userMeResponse;
     }
 
     // delete User
