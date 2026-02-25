@@ -61,7 +61,10 @@ public class AuthenticationService {
                 user.getId(),
                 user.getEmail(),
                 user.getFirstName(),
-                user.getLastName()
+                user.getLastName(),
+                user.getBio(),
+                user.getAddress(),
+                user.getAvatarURL()
         );
     }
 }

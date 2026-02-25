@@ -2,11 +2,13 @@ package com.nomadtrack.nomadtrackserver.service;
 
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
+import com.nomadtrack.nomadtrackserver.model.dto.UserSearchProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -57,6 +59,22 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<User> getAll() {
         return userRepository.findAll();
+    }
+
+    // searchAll user profiles
+    @Transactional(readOnly = true)
+    public List<UserSearchProfileDto> searchAll() {
+        List<User> users = userRepository.findAll();
+        List<UserSearchProfileDto> userSearchProfileDtos = new ArrayList<>();
+        for (User user : users) {
+            UserSearchProfileDto userSearchProfileDto = new UserSearchProfileDto();
+            userSearchProfileDto.setFirstName(user.getFirstName());
+            userSearchProfileDto.setLastName(user.getLastName());
+            userSearchProfileDto.setAvatarURL(user.getAvatarURL());
+            userSearchProfileDto.setBio(user.getBio());
+            userSearchProfileDtos.add(userSearchProfileDto);
+        }
+        return userSearchProfileDtos;
     }
 
     // getById
