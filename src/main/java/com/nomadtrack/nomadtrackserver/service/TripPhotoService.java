@@ -44,9 +44,45 @@ public class TripPhotoService {
         return tripPhotoRepository.save(tripPhoto);
     }
 
+    // createForUser - verifies trip belongs to the current user before creating
+    public TripPhoto createForUser(
+            Integer tripId, Integer userId, String url, String caption, Integer sortOrder
+    ) {
+        if (tripId == null) {
+            throw new IllegalArgumentException("tripId is required");
+        }
+
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+
+        if (!trip.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Trip does not belong to the current user: " + tripId);
+        }
+
+        TripPhoto tripPhoto = new TripPhoto();
+        tripPhoto.setTrip(trip);
+        tripPhoto.setUrl(url);
+        tripPhoto.setCaption(caption);
+        tripPhoto.setSortOrder(sortOrder);
+
+        return tripPhotoRepository.save(tripPhoto);
+    }
+
     // getAll
     @Transactional(readOnly = true)
     public List<TripPhoto> getAll(Integer tripId) {
+        return tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId);
+    }
+
+    // getAllByUserId - returns only photos for trips owned by the given user
+    @Transactional(readOnly = true)
+    public List<TripPhoto> getAllByUserId(Integer tripId, Integer userId) {
+        List<Trip> userTrips = tripRepository.findByUser_Id(userId);
+        boolean tripBelongsToUser = userTrips.stream()
+                .anyMatch(trip -> trip.getId().equals(tripId));
+        if (!tripBelongsToUser) {
+            throw new IllegalArgumentException("Trip not found for current user: " + tripId);
+        }
         return tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId);
     }
 
@@ -58,6 +94,22 @@ public class TripPhotoService {
         if (!tripPhotoRepository.existsById(tripPhotoId)) {
             throw new IllegalArgumentException("TripPhoto not found: " + tripPhotoId);
         }
+        tripPhotoRepository.deleteById(tripPhotoId);
+    }
+
+    // deleteForUser - verifies photo's trip belongs to the current user before deleting
+    public void deleteForUser(Integer tripPhotoId, Integer userId) {
+        if (tripPhotoId == null) {
+            throw new IllegalArgumentException("TripPhotoId is required");
+        }
+
+        TripPhoto tripPhoto = tripPhotoRepository.findById(tripPhotoId)
+                .orElseThrow(() -> new IllegalArgumentException("TripPhoto not found: " + tripPhotoId));
+
+        if (!tripPhoto.getTrip().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("TripPhoto does not belong to the current user: " + tripPhotoId);
+        }
+
         tripPhotoRepository.deleteById(tripPhotoId);
     }
 }

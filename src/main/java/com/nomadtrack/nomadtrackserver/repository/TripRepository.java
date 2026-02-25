@@ -10,4 +10,5 @@ import java.util.List;
 public interface TripRepository extends JpaRepository<Trip, Integer> {
     List<Trip> findByVisibilityIgnoreCase(String visibility);
     List<Trip> findByCountryIgnoreCase(String country);
+    List<Trip> findByUser_Id(Integer userId);
 }
