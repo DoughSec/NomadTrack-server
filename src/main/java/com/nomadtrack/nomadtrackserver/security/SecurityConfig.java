@@ -22,6 +22,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/nomadTrack/auth/**").permitAll()
+                    .requestMatchers("/nomadTrack/users/me").permitAll()
                     .anyRequest().permitAll()
             );
 
