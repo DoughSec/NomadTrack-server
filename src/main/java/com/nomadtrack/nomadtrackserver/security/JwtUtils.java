@@ -2,19 +2,28 @@ package com.nomadtrack.nomadtrackserver.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+@Component
 public class JwtUtils {
 
-    // IMPORTANT: keep this stable across restarts (use env var/properties in real apps)
-    private static final String SECRET = "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS";
+    private final Key key;
 
-    private static final Key key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    public JwtUtils(@Value("${JWT_SECRET}") String secret) {
 
-    public static String createJWT(String id, String issuer, String subject, long ttlMillis) {
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalArgumentException("JWT_SECRET must be at least 32 characters (256 bits) for HS256");
+        }
+
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String createJWT(String id, String issuer, String subject, long ttlMillis) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
         Date expiration = new Date(nowMillis + ttlMillis);
@@ -29,16 +38,15 @@ public class JwtUtils {
                 .compact();
     }
 
-    public static Claims decodeJWT(String jwt) {
-        Jws<Claims> claimsJws = Jwts.parserBuilder()
+    public Claims decodeJWT(String jwt) {
+        return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
-                .parseClaimsJws(jwt);
-
-        return claimsJws.getBody();
+                .parseClaimsJws(jwt)
+                .getBody();
     }
 
-    public static boolean isTokenValid(String token) {
+    public boolean isTokenValid(String token) {
         try {
             decodeJWT(token);
             return true;
