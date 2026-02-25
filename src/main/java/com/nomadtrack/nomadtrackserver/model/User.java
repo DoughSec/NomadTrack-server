@@ -39,7 +39,7 @@ public class User {
     @Column(name = "bio")
     private String bio;
 
-    @Column(name = "address", nullable = false)
+    @Column(name = "address")
     private String address;
 
     @Column(name = "role", nullable = false)

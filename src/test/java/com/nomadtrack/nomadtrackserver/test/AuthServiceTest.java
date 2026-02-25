@@ -30,6 +30,8 @@ public class AuthServiceTest {
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private JwtUtils JwtUtils;
 
     @InjectMocks
     private AuthenticationService authenticationService;

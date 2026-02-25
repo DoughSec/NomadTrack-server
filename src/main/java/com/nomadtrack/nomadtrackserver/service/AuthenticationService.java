@@ -14,14 +14,16 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils JwtUtils;
 
     // 60 minutes
     private static final long TTL_MILLIS = 60L * 60L * 1000L;
 
     public AuthenticationService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, JwtUtils JwtUtils) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.JwtUtils = JwtUtils;
     }
 
     // user login
