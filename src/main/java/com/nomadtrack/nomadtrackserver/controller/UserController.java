@@ -2,6 +2,7 @@ package com.nomadtrack.nomadtrackserver.controller;
 
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
+import com.nomadtrack.nomadtrackserver.model.dto.UserSearchProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,14 @@ public class UserController {
         return userService.getAll();
     }
 
+    //get all User records / search users
+    @GetMapping("/search")
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserSearchProfileDto> searchAll() {
+        return userService.searchAll();
+    }
+
+
     //get current user profile
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
@@ -35,7 +44,7 @@ public class UserController {
         return userService.getById(getCurrentUserId(principal));
     }
 
-    //get Trip by id
+    //get user by id
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public User getTripById(@PathVariable("userId") Integer userId) {
