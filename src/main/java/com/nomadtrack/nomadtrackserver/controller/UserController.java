@@ -5,18 +5,14 @@ import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserSearchProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
-import com.nomadtrack.nomadtrackserver.security.JwtUtils;
 import com.nomadtrack.nomadtrackserver.service.AuthenticationService;
 import com.nomadtrack.nomadtrackserver.service.UserService;
-import io.jsonwebtoken.Claims;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-
-import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole;
 
 @RestController
 @RequestMapping("/nomadTrack/users")

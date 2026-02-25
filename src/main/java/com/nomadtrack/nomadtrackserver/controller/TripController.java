@@ -2,7 +2,12 @@ package com.nomadtrack.nomadtrackserver.controller;
 
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
+import com.nomadtrack.nomadtrackserver.repository.UserRepository;
+import com.nomadtrack.nomadtrackserver.service.AuthenticationService;
 import com.nomadtrack.nomadtrackserver.service.TripService;
+import com.nomadtrack.nomadtrackserver.security.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,17 +17,20 @@ import java.util.List;
 @RequestMapping("/nomadTrack/trips")
 public class TripController {
     private final TripService tripService;
+    private final AuthenticationService authService;
 
-    public TripController(TripService tripService) {
+    public TripController(TripService tripService, AuthenticationService authService) {
         this.tripService = tripService;
+        this.authService = authService;
     }
 
     //create Trip record
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Trip create(@RequestBody Trip request) {
+    public TripRequestDto createTrip(@RequestBody TripRequestDto request) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         return tripService.create(
-                request.getUser().getId(),
+                currentUserId.intValue(),
                 request.getTitle(),
                 request.getCity(),
                 request.getCountry(),
@@ -32,21 +40,22 @@ public class TripController {
                 request.getLatitude(),
                 request.getLongitude(),
                 request.getVisibility()
-                );
+            );
     }
 
     //get all Trip records
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<Trip> getAll() {
+    public List<TripRequestDto> getAll() {
         return tripService.getAll();
     }
 
-    //get Trip by id
-    @GetMapping("/{tripId}")
+    //get Trip by countryName
+    @GetMapping("/{countryName}")
     @ResponseStatus(HttpStatus.OK)
-    public Trip getTripById(@PathVariable("tripId") Integer id) {
-        return tripService.getById(id);
+    public List<TripRequestDto> getTripById(@PathVariable("countryName") String countryName) {
+
+        return tripService.getByCountryName(countryName);
     }
 
     //get map locations/pins
@@ -59,15 +68,27 @@ public class TripController {
     //update Trip record
     @PutMapping("/{tripId}")
     @ResponseStatus(HttpStatus.OK)
-    public Trip updateTrip(@PathVariable("tripId") Integer tripId, @RequestBody Trip trip) {
-        return tripService.update(tripId, trip);
+    public TripRequestDto updateTrip(@PathVariable("tripId") Integer tripId, @RequestHeader("Authorization") String authorizationHeader,
+                           @RequestBody TripRequestDto dto) {
+        String token = authService.extractBearerToken(authorizationHeader);
+        UserMeResponse userMeResponse = authService.me(token);
+        return tripService.update(userMeResponse.getId(), dto);
     }
 
     //delete Trip record
     @DeleteMapping("/{tripId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTrip(@PathVariable("tripId") Integer tripId) {
-        tripService.delete(tripId);
+    public void deleteTrip(@PathVariable("tripId") Integer tripId, @RequestHeader("Authorization") String authorizationHeader) {
+        String token = authService.extractBearerToken(authorizationHeader);
+        UserMeResponse userMeResponse = authService.me(token);
+
+        Trip tripToDelete = tripService.getById(tripId);
+
+        if(userMeResponse.getId().equals(tripToDelete.getUser().getId())) {
+            tripService.delete(tripId);
+        } else {
+            throw new IllegalArgumentException("Trip does not belong to the user");
+        }
     }
 
 }

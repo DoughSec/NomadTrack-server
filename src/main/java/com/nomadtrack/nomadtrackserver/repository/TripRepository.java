@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Integer> {
     List<Trip> findByVisibilityIgnoreCase(String visibility);
+    List<Trip> findByCountryIgnoreCase(String country);
 }
