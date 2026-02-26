@@ -3,6 +3,7 @@ package com.nomadtrack.nomadtrackserver.test;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripLike;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.TripLikeResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripLikeRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
@@ -57,9 +58,11 @@ public class TripLikeServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(tripLikeRepository.save(any(TripLike.class))).thenReturn(tripLike);
 
-        TripLike result = tripLikeService.create(1, 1);
+        TripLikeResponseDto result = tripLikeService.create(1, 1);
 
         assertNotNull(result);
+        assertEquals(1, result.getTripId());
+        assertEquals(1, result.getUserId());
         verify(tripLikeRepository).save(any(TripLike.class));
     }
 
@@ -97,31 +100,32 @@ public class TripLikeServiceTest {
         when(tripLikeRepository.findAllByTrip_IdOrderByCreatedAtAsc(1))
                 .thenReturn(List.of(tripLike));
 
-        List<TripLike> results = tripLikeService.getAll(1);
+        List<TripLikeResponseDto> results = tripLikeService.getAll(1);
 
         assertEquals(1, results.size());
+        assertEquals(1, results.get(0).getTripId());
     }
 
     @Test
     void delete_success() {
-        when(tripLikeRepository.existsById(1)).thenReturn(true);
+        when(tripLikeRepository.findByIdAndTrip_Id(1, 1)).thenReturn(java.util.Optional.of(tripLike));
 
-        tripLikeService.delete(1);
+        tripLikeService.delete(1, 1);
 
-        verify(tripLikeRepository).deleteById(1);
+        verify(tripLikeRepository).delete(tripLike);
     }
 
     @Test
     void delete_nullId_throws() {
         assertThrows(IllegalArgumentException.class,
-                () -> tripLikeService.delete(null));
+                () -> tripLikeService.delete(1, null));
     }
 
     @Test
     void delete_notFound_throws() {
-        when(tripLikeRepository.existsById(99)).thenReturn(false);
+        when(tripLikeRepository.findByIdAndTrip_Id(99, 1)).thenReturn(java.util.Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> tripLikeService.delete(99));
+                () -> tripLikeService.delete(1, 99));
     }
 }
