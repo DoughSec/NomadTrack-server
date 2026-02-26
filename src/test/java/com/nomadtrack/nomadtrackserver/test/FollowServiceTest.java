@@ -2,6 +2,7 @@ package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.model.Follow;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.FollowDto;
 import com.nomadtrack.nomadtrackserver.repository.FollowRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.FollowService;
@@ -49,13 +50,17 @@ public class FollowServiceTest {
         when(followRepository.existsByFollower_IdAndFollowee_Id(1, 2)).thenReturn(false);
         when(userRepository.findById(1)).thenReturn(Optional.of(follower));
         when(userRepository.findById(2)).thenReturn(Optional.of(followee));
-        when(followRepository.save(any(Follow.class))).thenAnswer(i -> i.getArgument(0));
+        when(followRepository.save(any(Follow.class))).thenAnswer(i -> {
+            Follow f = i.getArgument(0);
+            f.setId(1);
+            return f;
+        });
 
-        Follow result = followService.follow(1, 2);
+        FollowDto result = followService.follow(1, 2);
 
         assertNotNull(result);
-        assertEquals(follower, result.getFollower());
-        assertEquals(followee, result.getFollowee());
+        assertEquals(1, result.getFollowerId());
+        assertEquals(2, result.getFolloweeId());
         verify(followRepository).save(any(Follow.class));
     }
 
@@ -142,21 +147,27 @@ public class FollowServiceTest {
     @Test
     void getFollowing_returnsList() {
         Follow f = new Follow();
+        f.setFollower(follower);
+        f.setFollowee(followee);
         when(followRepository.findAllByFollower_Id(1)).thenReturn(List.of(f));
 
-        List<Follow> result = followService.getFollowing(1);
+        List<FollowDto> result = followService.getFollowing(1);
 
         assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getFollowerId());
     }
 
     @Test
     void getFollowers_returnsList() {
         Follow f = new Follow();
+        f.setFollower(follower);
+        f.setFollowee(followee);
         when(followRepository.findAllByFollowee_Id(2)).thenReturn(List.of(f));
 
-        List<Follow> result = followService.getFollowers(2);
+        List<FollowDto> result = followService.getFollowers(2);
 
         assertEquals(1, result.size());
+        assertEquals(2, result.get(0).getFolloweeId());
     }
 
     // --- countFollowers() / countFollowing() tests ---

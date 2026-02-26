@@ -2,12 +2,14 @@ package com.nomadtrack.nomadtrackserver.service;
 
 import com.nomadtrack.nomadtrackserver.model.Follow;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.FollowDto;
 import com.nomadtrack.nomadtrackserver.repository.FollowRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FollowService {
@@ -23,7 +25,7 @@ public class FollowService {
 
     //follow a user
     @Transactional
-    public Follow follow(Integer followerId, Integer followeeId) {
+    public FollowDto follow(Integer followerId, Integer followeeId) {
 
         if (followerId == null || followeeId == null) {
             throw new IllegalArgumentException("FollowerId and FolloweeId must not be null");
@@ -47,7 +49,7 @@ public class FollowService {
         relationship.setFollower(followerUser);
         relationship.setFollowee(followeeUser);
 
-        return followRepository.save(relationship);
+        return toDto(followRepository.save(relationship));
     }
 
     //Unfollow a user
@@ -72,13 +74,17 @@ public class FollowService {
     }
 
     //Get all users that this user is following
-    public List<Follow> getFollowing(Integer followerId) {
-        return followRepository.findAllByFollower_Id(followerId);
+    @Transactional
+    public List<FollowDto> getFollowing(Integer followerId) {
+        return followRepository.findAllByFollower_Id(followerId)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     // Get all followers of a user
-    public List<Follow> getFollowers(Integer followeeId) {
-        return followRepository.findAllByFollowee_Id(followeeId);
+    @Transactional
+    public List<FollowDto> getFollowers(Integer followeeId) {
+        return followRepository.findAllByFollowee_Id(followeeId)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     // Count followers
@@ -89,5 +95,22 @@ public class FollowService {
     // Count who the user is following
     public Integer countFollowing(Integer followerId) {
         return followRepository.findAllByFollower_Id(followerId).size();
+    }
+
+    private FollowDto toDto(Follow follow) {
+        User follower = follow.getFollower();
+        User followee = follow.getFollowee();
+        return new FollowDto(
+                follow.getId(),
+                follower.getId(),
+                follower.getFirstName(),
+                follower.getLastName(),
+                follower.getAvatarURL(),
+                followee.getId(),
+                followee.getFirstName(),
+                followee.getLastName(),
+                followee.getAvatarURL(),
+                follow.getCreatedAt()
+        );
     }
 }
