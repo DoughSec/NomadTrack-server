@@ -3,6 +3,7 @@ package com.nomadtrack.nomadtrackserver.test;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.TripCommentResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripCommentRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
@@ -56,10 +57,12 @@ public class TripCommentServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
 
-        TripComment result = tripCommentService.create(1, 1, "Nice trip!");
+        TripCommentResponseDto result = tripCommentService.create(1, 1, "Nice trip!");
 
         assertNotNull(result);
         assertEquals("Nice trip!", result.getComment());
+        assertEquals(1, result.getTripId());
+        assertEquals(1, result.getUserId());
         verify(tripCommentRepository).save(any(TripComment.class));
     }
 
@@ -88,49 +91,51 @@ public class TripCommentServiceTest {
         when(tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(1))
                 .thenReturn(List.of(tripComment));
 
-        List<TripComment> results = tripCommentService.getAll(1);
+        List<TripCommentResponseDto> results = tripCommentService.getAll(1);
 
         assertEquals(1, results.size());
-    }
-
-    @Test
-    void getById_success() {
-        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
-
-        TripComment result = tripCommentService.getById(1);
-
-        assertEquals(1, result.getId());
-    }
-
-    @Test
-    void getById_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
-                () -> tripCommentService.getById(null));
+        assertEquals(1, results.get(0).getTripId());
     }
 
     @Test
     void update_success() {
-        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
+        when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
 
-        TripComment result = tripCommentService.update(1, "Updated comment");
+        TripCommentResponseDto result = tripCommentService.update(1, 1, "Updated comment");
 
         assertEquals("Updated comment", result.getComment());
         verify(tripCommentRepository).save(any(TripComment.class));
     }
 
     @Test
+    void update_notFound_throws() {
+        when(tripCommentRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> tripCommentService.update(1, 99, "updated"));
+    }
+
+    @Test
     void delete_success() {
-        when(tripCommentRepository.existsById(1)).thenReturn(true);
+        when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
 
-        tripCommentService.delete(1);
+        tripCommentService.delete(1, 1);
 
-        verify(tripCommentRepository).deleteById(1);
+        verify(tripCommentRepository).delete(tripComment);
     }
 
     @Test
     void delete_nullId_throws() {
         assertThrows(IllegalArgumentException.class,
-                () -> tripCommentService.delete(null));
+                () -> tripCommentService.delete(1, null));
+    }
+
+    @Test
+    void delete_notFound_throws() {
+        when(tripCommentRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> tripCommentService.delete(1, 99));
     }
 }
