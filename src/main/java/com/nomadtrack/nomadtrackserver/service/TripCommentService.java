@@ -3,7 +3,7 @@ package com.nomadtrack.nomadtrackserver.service;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
-import com.nomadtrack.nomadtrackserver.model.dto.CommentRequest;
+import com.nomadtrack.nomadtrackserver.model.dto.TripCommentResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripCommentRepository;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -31,9 +32,7 @@ public class TripCommentService {
     }
 
     // create TripComment
-    public TripComment create(
-            Integer tripId, Integer userId, String comment
-    ) {
+    public TripCommentResponseDto create(Integer tripId, Integer userId, String comment) {
         if (userId == null || tripId == null) {
             throw new IllegalArgumentException("userId or tripId are required");
         }
@@ -49,42 +48,50 @@ public class TripCommentService {
         tripComment.setUser(user);
         tripComment.setComment(comment);
 
-        return tripCommentRepository.save(tripComment);
+        return toDto(tripCommentRepository.save(tripComment));
     }
 
     // getAll
     @Transactional(readOnly = true)
-    public List<TripComment> getAll(Integer tripId) {
-        return tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId);
+    public List<TripCommentResponseDto> getAll(Integer tripId) {
+        return tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    // getById
-    @Transactional(readOnly = true)
-    public TripComment getById(Integer tripCommentId) {
-        if (tripCommentId == null) {
-            throw new IllegalArgumentException("tripCommentId is required");
+    // update TripComment - scoped to tripId
+    public TripCommentResponseDto update(Integer tripId, Integer commentId, String comment) {
+        if (tripId == null || commentId == null) {
+            throw new IllegalArgumentException("tripId and commentId are required");
         }
-        return tripCommentRepository.findById(tripCommentId)
-                .orElseThrow(() -> new IllegalArgumentException("tripCommentId not found: " + tripCommentId));
-    }
-
-    // update TripComment
-    public TripComment update(Integer tripCommentId, String comment) {
-        TripComment existing = getById(tripCommentId);
+        TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Comment not found with id " + commentId + " on trip " + tripId));
 
         existing.setComment(comment);
-
-        return tripCommentRepository.save(existing);
+        return toDto(tripCommentRepository.save(existing));
     }
 
-    // delete TripComment
-    public void delete(Integer tripCommentId) {
-        if (tripCommentId == null) {
-            throw new IllegalArgumentException("TripCommentId is required");
+    // delete TripComment - scoped to tripId
+    public void delete(Integer tripId, Integer commentId) {
+        if (tripId == null || commentId == null) {
+            throw new IllegalArgumentException("tripId and commentId are required");
         }
-        if (!tripCommentRepository.existsById(tripCommentId)) {
-            throw new IllegalArgumentException("TripComment not found: " + tripCommentId);
-        }
-        tripCommentRepository.deleteById(tripCommentId);
+        TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Comment not found with id " + commentId + " on trip " + tripId));
+        tripCommentRepository.delete(existing);
+    }
+
+    private TripCommentResponseDto toDto(TripComment c) {
+        TripCommentResponseDto dto = new TripCommentResponseDto();
+        dto.setCommentId(c.getId());
+        dto.setTripId(c.getTrip().getId());
+        dto.setUserId(c.getUser().getId());
+        dto.setUserFirstName(c.getUser().getFirstName());
+        dto.setUserLastName(c.getUser().getLastName());
+        dto.setComment(c.getComment());
+        dto.setCreatedAt(c.getCreatedAt());
+        dto.setUpdatedAt(c.getUpdatedAt());
+        return dto;
     }
 }
