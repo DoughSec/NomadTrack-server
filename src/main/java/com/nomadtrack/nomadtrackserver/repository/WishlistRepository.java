@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface WishlistRepository extends JpaRepository<Wishlist, Integer> {
     List<Wishlist> findAllByUser_Id(Integer userId);
+    List<Wishlist> findByTargetCountryIgnoreCase(String targetCountry);
 }

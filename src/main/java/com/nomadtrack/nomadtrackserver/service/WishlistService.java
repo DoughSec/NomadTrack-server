@@ -1,13 +1,20 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.model.Trip;
+import com.nomadtrack.nomadtrackserver.model.Wishlist;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.Wishlist;
+import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.WishlistResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.repository.WishlistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,10 +32,9 @@ public class WishlistService {
         this.userRepository = userRepository;
     }
 
-    // create Wishlist --- TODO: userId should just be the principal
-    public Wishlist create(
-            Integer userId, String title, String description, String targetCountry, String targetCity, LocalDate deadline,
-            boolean isCompleted, LocalDate completedDAte
+    // create Wishlist
+    public WishlistResponseDto create(
+            Integer userId, String title, String description, String targetCountry, String targetCity, LocalDate deadline
     ) {
         if (userId == null) {
             throw new IllegalArgumentException("userId is required");
@@ -44,16 +50,43 @@ public class WishlistService {
         wishlist.setTargetCountry(targetCountry);
         wishlist.setTargetCity(targetCity);
         wishlist.setDeadline(deadline);
-        wishlist.setCompleted(isCompleted);
-        wishlist.setCompletedDate(completedDAte);
+        wishlist.setCompleted(false);
+        wishlist.setCompletedDate(null);
 
-        return wishlistRepository.save(wishlist);
+        WishlistResponseDto responseDto = new WishlistResponseDto();
+        responseDto.setWishlistId(wishlist.getId());
+        responseDto.setTitle(title);
+        responseDto.setDescription(description);
+        responseDto.setTargetCountry(targetCountry);
+        responseDto.setTargetCity(targetCity);
+        responseDto.setDeadline(deadline);
+        wishlistRepository.save(wishlist);
+
+        return responseDto;
     }
 
-    // getAll
+//    // getAll
+//    @Transactional(readOnly = true)
+//    public List<Wishlist> getAll() {
+//
+//        return wishlistRepository.findAll();
+//    }
+
+    // getAllUserWishlists
     @Transactional(readOnly = true)
-    public List<Wishlist> getAll() {
-        return wishlistRepository.findAll();
+    public List<WishlistResponseDto> getAll(Integer userId) {
+        List<Wishlist> wishlists = wishlistRepository.findAllByUser_Id(userId);
+        List<WishlistResponseDto> wishlistResponseDtos = new ArrayList<>();
+        for (Wishlist wishlist : wishlists) {
+            WishlistResponseDto wishlistResponseDto = new WishlistResponseDto();
+            wishlistResponseDto.setWishlistId(wishlist.getId());
+            wishlistResponseDto.setTitle(wishlist.getTitle());
+            wishlistResponseDto.setDescription(wishlist.getDescription());
+            wishlistResponseDto.setTargetCity(wishlist.getTargetCity());
+            wishlistResponseDto.setTargetCountry(wishlist.getTargetCountry());
+            wishlistResponseDtos.add(wishlistResponseDto);
+        }
+        return wishlistResponseDtos;
     }
 
     // getByUser
@@ -75,44 +108,95 @@ public class WishlistService {
                 .orElseThrow(() -> new IllegalArgumentException("Wishlist not found: " + wishlistId));
     }
 
-    // patch update complete
-    public Wishlist markComplete(Integer wishlistId, boolean completed) {
-        Wishlist existing = getById(wishlistId);
-        existing.setCompleted(completed);
+    // getByCountryName
+    @Transactional(readOnly = true)
+    public List<WishlistResponseDto> getByTargetCountry(String targetCountry) {
+        if (targetCountry == null) {
+            throw new IllegalArgumentException("targetCountry is required");
+        }
+        List<Wishlist> wishlists = wishlistRepository.findByTargetCountryIgnoreCase(targetCountry);
 
-        if (completed) {
+        List<WishlistResponseDto> wishlistResponseDtos = new ArrayList<>();
+        for (Wishlist wishlist : wishlists) {
+            WishlistResponseDto wishlistResponseDto = new WishlistResponseDto();
+            wishlistResponseDto.setWishlistId(wishlist.getId());
+            wishlistResponseDto.setTitle(wishlist.getTitle());
+            wishlistResponseDto.setTargetCountry(wishlist.getTargetCountry());
+            wishlistResponseDto.setTargetCity(wishlist.getTargetCity());
+            wishlistResponseDto.setDescription(wishlist.getDescription());
+            wishlistResponseDto.setDeadline(wishlist.getDeadline());
+            wishlistResponseDtos.add(wishlistResponseDto);
+        }
+
+        return wishlistResponseDtos;
+    }
+
+    // patch update complete
+    public WishlistResponseDto markComplete(Integer wishlistId, boolean isCompleted) {
+        Wishlist existing = getById(wishlistId);
+        existing.setCompleted(isCompleted);
+
+        if (isCompleted) {
             existing.setCompletedDate(LocalDate.now());
         } else {
             existing.setCompletedDate(null);
         }
 
-        return wishlistRepository.save(existing);
+        wishlistRepository.save(existing);
+
+        WishlistResponseDto responseDto = new WishlistResponseDto();
+        responseDto.setWishlistId(existing.getId());
+        responseDto.setTitle(existing.getTitle());
+        responseDto.setDescription(existing.getDescription());
+        responseDto.setTargetCountry(existing.getTargetCountry());
+        responseDto.setTargetCity(existing.getTargetCity());
+        responseDto.setDeadline(existing.getDeadline());
+        responseDto.setCompleted(existing.isCompleted());
+        responseDto.setCompletedDate(existing.getCompletedDate());
+        return responseDto;
     }
 
 
     // update Wishlist
-    public Wishlist update(Integer WishlistId, Wishlist updated) {
+    public WishlistResponseDto update(Integer WishlistId, WishlistRequestDto updated, Integer userId) {
         Wishlist existing = getById(WishlistId);
 
-        existing.setCompleted(updated.isCompleted());
-        existing.setCompletedDate(updated.getCompletedDate());
+        if(!existing.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Must be called by the current user");
+        }
         existing.setDeadline(updated.getDeadline());
         existing.setDescription(updated.getDescription());
         existing.setTitle(updated.getTitle());
         existing.setTargetCity(updated.getTargetCity());
         existing.setTargetCountry(updated.getTargetCountry());
 
-        return wishlistRepository.save(existing);
+        WishlistResponseDto responseDto = new WishlistResponseDto();
+        responseDto.setWishlistId(existing.getId());
+        responseDto.setTitle(existing.getTitle());
+        responseDto.setDescription(existing.getDescription());
+        responseDto.setTargetCountry(existing.getTargetCountry());
+        responseDto.setTargetCity(existing.getTargetCity());
+        responseDto.setDeadline(existing.getDeadline());
+
+        wishlistRepository.save(existing);
+
+        return responseDto;
     }
 
     // delete Wishlist
-    public void delete(Integer wishlistId) {
+    public void delete(Integer wishlistId, Integer userId) {
         if (wishlistId == null) {
             throw new IllegalArgumentException("WishlistId is required");
         }
         if (!wishlistRepository.existsById(wishlistId)) {
             throw new IllegalArgumentException("Wishlist not found: " + wishlistId);
         }
+
+        Wishlist wishlist = getById(wishlistId);
+        if (!wishlist.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Wishlist user not found: " + wishlistId);
+        }
+
         wishlistRepository.deleteById(wishlistId);
     }
 }

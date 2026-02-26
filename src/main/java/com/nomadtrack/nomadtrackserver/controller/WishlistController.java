@@ -1,7 +1,7 @@
 package com.nomadtrack.nomadtrackserver.controller;
 
-import com.nomadtrack.nomadtrackserver.model.Wishlist;
-import com.nomadtrack.nomadtrackserver.model.dto.WishlistCompleteRequest;
+import com.nomadtrack.nomadtrackserver.model.dto.*;
+import com.nomadtrack.nomadtrackserver.security.SecurityUtils;
 import com.nomadtrack.nomadtrackserver.service.WishlistService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,52 +20,57 @@ public class WishlistController {
     //create Wishlist record
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Wishlist create(@RequestBody Wishlist request) {
+    public WishlistResponseDto create(@RequestBody WishlistRequestDto request) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         return wishlistService.create(
-                request.getUser().getId(),
+                currentUserId.intValue(),
                 request.getTitle(),
                 request.getDescription(),
                 request.getTargetCountry(),
                 request.getTargetCity(),
-                request.getDeadline(),
-                request.isCompleted(),
-                request.getCompletedDate()
+                request.getDeadline()
         );
     }
 
-    //get all Wishlist records
+    //get all user Wishlist records
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<Wishlist> getAll() {
-        return wishlistService.getAll();
+    public List<WishlistResponseDto> getAll() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        return wishlistService.getAll(currentUserId.intValue());
     }
 
-    //get Wishlist by id
-    @GetMapping("/{wishlistId}")
+    //get Wishlist by targetCountry
+    @GetMapping("/{targetCountry}")
     @ResponseStatus(HttpStatus.OK)
-    public Wishlist getWishlistById(@PathVariable("wishlistId") Integer id) {
-        return wishlistService.getById(id);
+    public List<WishlistResponseDto> getWishlistById(@PathVariable("targetCountry") String targetCountry) {
+        return wishlistService.getByTargetCountry(targetCountry);
     }
 
     //mark complete
     @PatchMapping("/{wishlistId}/complete")
-    public Wishlist markComplete(@PathVariable("wishlistId") Integer id,
-                                 @RequestBody WishlistCompleteRequest request) {
+    public WishlistResponseDto markComplete(@PathVariable("wishlistId") Integer id,
+                                            @RequestBody WishlistCompleteRequest request) {
         return wishlistService.markComplete(id, request.isCompleted());
     }
 
     //update Wishlist record
     @PutMapping("/{wishlistId}")
     @ResponseStatus(HttpStatus.OK)
-    public Wishlist updateWishlist(@PathVariable("wishlistId") Integer id, @RequestBody Wishlist wishlist) {
-        return wishlistService.update(id, wishlist);
+    public WishlistResponseDto updateWishlist(@PathVariable("wishlistId") Integer id, @RequestBody WishlistRequestDto request) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        return wishlistService.update(id, request, currentUserId.intValue());
     }
 
     //delete Wishlist record
     @DeleteMapping("/{wishlistId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteWishlist(@PathVariable("wishlistId") Integer id) {
-        wishlistService.delete(id);
+    public void deleteWishlist(@PathVariable("wishlistId") Integer id,
+                               @RequestHeader("Authorization") String authorizationHeader) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        wishlistService.delete(id, currentUserId.intValue());
     }
 
 }
