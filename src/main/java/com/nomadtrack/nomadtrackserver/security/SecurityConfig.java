@@ -31,7 +31,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/nomadTrack/auth/**").permitAll()
                     .requestMatchers("/nomadTrack/users/me").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/nomadTrack/trips/**").authenticated()
+                    .requestMatchers("/nomadTrack/trips/**").permitAll()
                     .requestMatchers("/nomadTrack/follows").permitAll()
                     .requestMatchers("/nomadTrack/follows").authenticated()
                     .anyRequest().permitAll()

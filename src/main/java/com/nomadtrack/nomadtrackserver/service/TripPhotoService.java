@@ -2,6 +2,8 @@ package com.nomadtrack.nomadtrackserver.service;
 
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripPhoto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripPhotoRepository;
 import org.springframework.stereotype.Service;
@@ -45,7 +47,7 @@ public class TripPhotoService {
     }
 
     // createForUser - verifies trip belongs to the current user before creating
-    public TripPhoto createForUser(
+    public TripPhotoResponseDto createForUser(
             Integer tripId, Integer userId, String url, String caption, Integer sortOrder
     ) {
         if (tripId == null) {
@@ -65,7 +67,17 @@ public class TripPhotoService {
         tripPhoto.setCaption(caption);
         tripPhoto.setSortOrder(sortOrder);
 
-        return tripPhotoRepository.save(tripPhoto);
+        TripPhoto saved = tripPhotoRepository.save(tripPhoto);
+
+        TripPhotoResponseDto dto = new TripPhotoResponseDto();
+        dto.setPhotoId(saved.getId());
+        dto.setTripId(tripId);
+        dto.setUrl(url);
+        dto.setCaption(caption);
+        dto.setSortOrder(sortOrder);
+
+
+        return dto;
     }
 
     // getAll
@@ -76,14 +88,25 @@ public class TripPhotoService {
 
     // getAllByUserId - returns only photos for trips owned by the given user
     @Transactional(readOnly = true)
-    public List<TripPhoto> getAllByUserId(Integer tripId, Integer userId) {
+    public List<TripPhotoResponseDto> getAllByUserId(Integer tripId, Integer userId) {
         List<Trip> userTrips = tripRepository.findByUser_Id(userId);
         boolean tripBelongsToUser = userTrips.stream()
                 .anyMatch(trip -> trip.getId().equals(tripId));
         if (!tripBelongsToUser) {
             throw new IllegalArgumentException("Trip not found for current user: " + tripId);
         }
-        return tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId);
+        return tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId)
+                .stream()
+                .map(photo -> {
+                    TripPhotoResponseDto dto = new TripPhotoResponseDto();
+                    dto.setPhotoId(photo.getId());
+                    dto.setTripId(tripId);
+                    dto.setUrl(photo.getUrl());
+                    dto.setCaption(photo.getCaption());
+                    dto.setSortOrder(photo.getSortOrder());
+                    return dto;
+                })
+                .toList();
     }
 
     // delete TripPhoto
