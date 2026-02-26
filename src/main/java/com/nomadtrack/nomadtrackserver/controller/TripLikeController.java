@@ -1,8 +1,7 @@
 package com.nomadtrack.nomadtrackserver.controller;
 
-import com.nomadtrack.nomadtrackserver.model.TripLike;
-import com.nomadtrack.nomadtrackserver.model.dto.CommentRequest;
-import com.nomadtrack.nomadtrackserver.model.dto.TripLikeDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripLikeResponseDto;
+import com.nomadtrack.nomadtrackserver.security.SecurityUtils;
 import com.nomadtrack.nomadtrackserver.service.TripLikeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -21,25 +20,23 @@ public class TripLikeController {
     //create TripLike record
     @PostMapping("/{tripId}/likes")
     @ResponseStatus(HttpStatus.CREATED)
-    public TripLike create(@PathVariable Integer tripId, @RequestBody TripLikeDto request) {
-        return tripLikeService.create(
-                tripId,
-                request.getUserId()
-        );
+    public TripLikeResponseDto create(@PathVariable Integer tripId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        return tripLikeService.create(tripId, currentUserId.intValue());
     }
 
     //get all TripLike records
     @GetMapping("/{tripId}/likes")
     @ResponseStatus(HttpStatus.OK)
-    public List<TripLike> getAll(@PathVariable("tripId") Integer tripId) {
+    public List<TripLikeResponseDto> getAll(@PathVariable("tripId") Integer tripId) {
         return tripLikeService.getAll(tripId);
     }
 
     //delete TripLike record
-    @DeleteMapping("/likes/{likeId}")
+    @DeleteMapping("/{tripId}/likes/{likeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTripLike(@PathVariable("likeId") Integer likeId) {
-        tripLikeService.delete(likeId);
+    public void deleteTripLike(@PathVariable("tripId") Integer tripId,
+                                @PathVariable("likeId") Integer likeId) {
+        tripLikeService.delete(tripId, likeId);
     }
-
 }
