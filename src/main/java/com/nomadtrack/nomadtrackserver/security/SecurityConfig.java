@@ -32,6 +32,7 @@ public class SecurityConfig {
                     .requestMatchers("/nomadTrack/auth/**").permitAll()
                     .requestMatchers("/nomadTrack/users/me").permitAll()
                     .requestMatchers(HttpMethod.POST, "/nomadTrack/trips/**").authenticated()
+                    .requestMatchers("/nomadTrack/follows").permitAll()
                     .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

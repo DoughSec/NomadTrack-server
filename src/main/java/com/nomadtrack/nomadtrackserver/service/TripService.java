@@ -71,6 +71,12 @@ public class TripService {
 
     // getAllUserTrips
     @Transactional(readOnly = true)
+    public List<Trip> listAll() {
+        return tripRepository.findAll();
+    }
+
+    // getAllUserTrips
+    @Transactional(readOnly = true)
     public List<TripRequestDto> getAll() {
         List<Trip> trips = tripRepository.findAll();
         List<TripRequestDto> tripRequestDtos = new ArrayList<>();
