@@ -1,7 +1,7 @@
 package com.nomadtrack.nomadtrackserver.controller;
 
-import com.nomadtrack.nomadtrackserver.model.TripPhoto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoResponseDto;
 import com.nomadtrack.nomadtrackserver.security.SecurityUtils;
 import com.nomadtrack.nomadtrackserver.service.TripPhotoService;
 import org.springframework.http.HttpStatus;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/nomadTrack/tripPhotos")
+@RequestMapping("/nomadTrack/trips")
 public class TripPhotoController {
     private final TripPhotoService tripPhotoService;
 
@@ -21,7 +21,7 @@ public class TripPhotoController {
     //create TripPhoto record
     @PostMapping("/{tripId}/photos")
     @ResponseStatus(HttpStatus.CREATED)
-    public TripPhoto create(@PathVariable Integer tripId, @RequestBody TripPhotoDto request) {
+    public TripPhotoResponseDto create(@PathVariable Integer tripId, @RequestBody TripPhotoDto request) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         return tripPhotoService.createForUser(
                 tripId,
@@ -35,7 +35,7 @@ public class TripPhotoController {
     //get all TripPhoto records for the current user's trip
     @GetMapping("/{tripId}/photos")
     @ResponseStatus(HttpStatus.OK)
-    public List<TripPhoto> getAll(@PathVariable("tripId") Integer tripId) {
+    public List<TripPhotoResponseDto> getAll(@PathVariable("tripId") Integer tripId) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         return tripPhotoService.getAllByUserId(tripId, currentUserId.intValue());
     }
@@ -43,9 +43,9 @@ public class TripPhotoController {
     //delete TripPhoto record
     @DeleteMapping("/photos/{photoId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTripPhoto(@PathVariable("photoId") Integer photoId) {
+    public void deleteTripPhoto(
+                                @PathVariable("photoId") Integer photoId) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         tripPhotoService.deleteForUser(photoId, currentUserId.intValue());
     }
-
 }
