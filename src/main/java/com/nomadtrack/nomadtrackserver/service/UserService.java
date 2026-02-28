@@ -99,6 +99,7 @@ public class UserService {
         List<UserSearchProfileDto> userSearchProfileDtos = new ArrayList<>();
         for (User user : users) {
             UserSearchProfileDto userSearchProfileDto = new UserSearchProfileDto();
+            userSearchProfileDto.setId(user.getId());
             userSearchProfileDto.setFirstName(user.getFirstName());
             userSearchProfileDto.setLastName(user.getLastName());
             userSearchProfileDto.setAvatarURL(user.getAvatarURL());
