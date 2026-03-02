@@ -44,7 +44,9 @@ public class WishlistController {
     @GetMapping("/{targetCountry}")
     @ResponseStatus(HttpStatus.OK)
     public List<WishlistResponseDto> getWishlistById(@PathVariable("targetCountry") String targetCountry) {
-        return wishlistService.getByTargetCountry(targetCountry);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        return wishlistService.getByTargetCountry(targetCountry, currentUserId.intValue());
     }
 
     //mark complete
