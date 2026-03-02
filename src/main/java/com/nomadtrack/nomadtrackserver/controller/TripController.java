@@ -5,7 +5,6 @@ import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripResponseDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
-import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.AuthenticationService;
 import com.nomadtrack.nomadtrackserver.service.TripService;
 import com.nomadtrack.nomadtrackserver.security.SecurityUtils;
@@ -47,9 +46,16 @@ public class TripController {
     //get all Trip records
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<TripResponseDto> getAll() {
+    public List<TripResponseDto> getAllMyTrips() {
         Long currentUserId = SecurityUtils.getCurrentUserId();
-        return tripService.getAllUserTrips(currentUserId.intValue());
+        return tripService.getAllMyTrips(currentUserId.intValue());
+    }
+
+    //get all Trip records
+    @GetMapping("/user/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<TripResponseDto> getAllUserTrips(@PathVariable("userId") Integer userId) {
+        return tripService.getAllUserTrips(userId);
     }
 
     //get Trip by countryName

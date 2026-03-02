@@ -73,9 +73,9 @@ public class TripService {
         return tripResponseDto;
     }
 
-    // getAllUserTrips
+    // getAllMyTrips
     @Transactional(readOnly = true)
-    public List<TripResponseDto> getAllUserTrips(Integer userId) {
+    public List<TripResponseDto> getAllMyTrips(Integer userId) {
         List<Trip> trips = tripRepository.findAll();
         List<TripResponseDto> tripResponseDtos = new ArrayList<>();
         for (Trip trip : trips) {
@@ -99,22 +99,25 @@ public class TripService {
     }
     // getAllUserTrips
     @Transactional(readOnly = true)
-    public List<TripResponseDto> getAll() {
+    public List<TripResponseDto> getAllUserTrips(Integer userId) {
         List<Trip> trips = tripRepository.findAll();
         List<TripResponseDto> tripResponseDtos = new ArrayList<>();
         for (Trip trip : trips) {
-            TripResponseDto tripResponseDto = new TripResponseDto();
-            tripResponseDto.setId(trip.getId());
-            tripResponseDto.setUserId(trip.getUser().getId());
-            tripResponseDto.setTitle(trip.getTitle());
-            tripResponseDto.setCity(trip.getCity());
-            tripResponseDto.setCountry(trip.getCountry());
-            tripResponseDto.setStartDate(trip.getStartDate());
-            tripResponseDto.setEndDate(trip.getEndDate());
-            tripResponseDto.setNotes(trip.getNotes());
-            tripResponseDto.setLatitude(trip.getLatitude());
-            tripResponseDto.setLongitude(trip.getLongitude());
-            tripResponseDtos.add(tripResponseDto);
+            if(trip.getUser().getId().equals(userId)) {
+                TripResponseDto tripResponseDto = new TripResponseDto();
+                tripResponseDto.setId(trip.getId());
+                tripResponseDto.setUserId(trip.getUser().getId());
+                tripResponseDto.setTitle(trip.getTitle());
+                tripResponseDto.setCity(trip.getCity());
+                tripResponseDto.setCountry(trip.getCountry());
+                tripResponseDto.setStartDate(trip.getStartDate());
+                tripResponseDto.setEndDate(trip.getEndDate());
+                tripResponseDto.setNotes(trip.getNotes());
+                tripResponseDto.setLatitude(trip.getLatitude());
+                tripResponseDto.setLongitude(trip.getLongitude());
+                tripResponseDtos.add(tripResponseDto);
+            }
+
         }
         return tripResponseDtos;
     }

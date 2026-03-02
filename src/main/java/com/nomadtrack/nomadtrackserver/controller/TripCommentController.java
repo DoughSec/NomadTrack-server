@@ -40,7 +40,8 @@ public class TripCommentController {
     public TripCommentResponseDto updateTripComment(@PathVariable("tripId") Integer tripId,
                                                      @PathVariable("commentId") Integer commentId,
                                                      @RequestBody CommentRequest request) {
-        return tripCommentService.update(tripId, commentId, request.getComment());
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        return tripCommentService.update(tripId, commentId, currentUserId.intValue(), request.getComment());
     }
 
     //delete TripComment record
@@ -48,6 +49,7 @@ public class TripCommentController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTripComment(@PathVariable("tripId") Integer tripId,
                                    @PathVariable("commentId") Integer commentId) {
-        tripCommentService.delete(tripId, commentId);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        tripCommentService.delete(tripId, currentUserId.intValue(), commentId);
     }
 }

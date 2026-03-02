@@ -58,10 +58,19 @@ public class TripCommentService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    //
+
     // update TripComment - scoped to tripId
-    public TripCommentResponseDto update(Integer tripId, Integer commentId, String comment) {
+    public TripCommentResponseDto update(Integer tripId, Integer commentId, Integer userId, String comment) {
         if (tripId == null || commentId == null) {
             throw new IllegalArgumentException("tripId and commentId are required");
+        }
+
+        TripComment tripComment = tripCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+
+        if (!userId.equals(tripComment.getUser().getId())) {
+            throw new IllegalArgumentException("Cannot edit another user's comment");
         }
         TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -72,10 +81,18 @@ public class TripCommentService {
     }
 
     // delete TripComment - scoped to tripId
-    public void delete(Integer tripId, Integer commentId) {
+    public void delete(Integer tripId, Integer userId, Integer commentId) {
         if (tripId == null || commentId == null) {
             throw new IllegalArgumentException("tripId and commentId are required");
         }
+
+        TripComment tripComment = tripCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+
+        if(!userId.equals(tripComment.getUser().getId())) {
+            throw new IllegalArgumentException("Cannot delete another user's comment");
+        }
+
         TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Comment not found with id " + commentId + " on trip " + tripId));
