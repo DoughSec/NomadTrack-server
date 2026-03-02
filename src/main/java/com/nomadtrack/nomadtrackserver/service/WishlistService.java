@@ -53,6 +53,8 @@ public class WishlistService {
         wishlist.setCompleted(false);
         wishlist.setCompletedDate(null);
 
+        wishlistRepository.save(wishlist);
+
         WishlistResponseDto responseDto = new WishlistResponseDto();
         responseDto.setWishlistId(wishlist.getId());
         responseDto.setTitle(title);
@@ -60,17 +62,9 @@ public class WishlistService {
         responseDto.setTargetCountry(targetCountry);
         responseDto.setTargetCity(targetCity);
         responseDto.setDeadline(deadline);
-        wishlistRepository.save(wishlist);
 
         return responseDto;
     }
-
-//    // getAll
-//    @Transactional(readOnly = true)
-//    public List<Wishlist> getAll() {
-//
-//        return wishlistRepository.findAll();
-//    }
 
     // getAllUserWishlists
     @Transactional(readOnly = true)
@@ -84,6 +78,9 @@ public class WishlistService {
             wishlistResponseDto.setDescription(wishlist.getDescription());
             wishlistResponseDto.setTargetCity(wishlist.getTargetCity());
             wishlistResponseDto.setTargetCountry(wishlist.getTargetCountry());
+            wishlistResponseDto.setDeadline(wishlist.getDeadline());
+            wishlistResponseDto.setCompleted(wishlist.isCompleted());
+            wishlistResponseDto.setCompletedDate(wishlist.getCompletedDate());
             wishlistResponseDtos.add(wishlistResponseDto);
         }
         return wishlistResponseDtos;
@@ -110,7 +107,7 @@ public class WishlistService {
 
     // getByCountryName
     @Transactional(readOnly = true)
-    public List<WishlistResponseDto> getByTargetCountry(String targetCountry) {
+    public List<WishlistResponseDto> getByTargetCountry(String targetCountry, Integer userId) {
         if (targetCountry == null) {
             throw new IllegalArgumentException("targetCountry is required");
         }
@@ -118,14 +115,19 @@ public class WishlistService {
 
         List<WishlistResponseDto> wishlistResponseDtos = new ArrayList<>();
         for (Wishlist wishlist : wishlists) {
-            WishlistResponseDto wishlistResponseDto = new WishlistResponseDto();
-            wishlistResponseDto.setWishlistId(wishlist.getId());
-            wishlistResponseDto.setTitle(wishlist.getTitle());
-            wishlistResponseDto.setTargetCountry(wishlist.getTargetCountry());
-            wishlistResponseDto.setTargetCity(wishlist.getTargetCity());
-            wishlistResponseDto.setDescription(wishlist.getDescription());
-            wishlistResponseDto.setDeadline(wishlist.getDeadline());
-            wishlistResponseDtos.add(wishlistResponseDto);
+            if (userId.equals(wishlist.getUser().getId())) {
+                WishlistResponseDto wishlistResponseDto = new WishlistResponseDto();
+                wishlistResponseDto.setWishlistId(wishlist.getId());
+                wishlistResponseDto.setTitle(wishlist.getTitle());
+                wishlistResponseDto.setTargetCountry(wishlist.getTargetCountry());
+                wishlistResponseDto.setTargetCity(wishlist.getTargetCity());
+                wishlistResponseDto.setDescription(wishlist.getDescription());
+                wishlistResponseDto.setDeadline(wishlist.getDeadline());
+                wishlistResponseDto.setCompleted(wishlist.isCompleted());
+                wishlistResponseDto.setCompletedDate(wishlist.getCompletedDate());
+                wishlistResponseDtos.add(wishlistResponseDto);
+            }
+
         }
 
         return wishlistResponseDtos;
@@ -170,6 +172,8 @@ public class WishlistService {
         existing.setTargetCity(updated.getTargetCity());
         existing.setTargetCountry(updated.getTargetCountry());
 
+        wishlistRepository.save(existing);
+
         WishlistResponseDto responseDto = new WishlistResponseDto();
         responseDto.setWishlistId(existing.getId());
         responseDto.setTitle(existing.getTitle());
@@ -178,7 +182,7 @@ public class WishlistService {
         responseDto.setTargetCity(existing.getTargetCity());
         responseDto.setDeadline(existing.getDeadline());
 
-        wishlistRepository.save(existing);
+
 
         return responseDto;
     }
