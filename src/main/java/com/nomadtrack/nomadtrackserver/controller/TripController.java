@@ -3,6 +3,7 @@ package com.nomadtrack.nomadtrackserver.controller;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripResponseDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.AuthenticationService;
@@ -27,7 +28,7 @@ public class TripController {
     //create Trip record
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TripRequestDto createTrip(@RequestBody TripRequestDto request) {
+    public TripResponseDto createTrip(@RequestBody TripRequestDto request) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         return tripService.create(
                 currentUserId.intValue(),
@@ -46,8 +47,9 @@ public class TripController {
     //get all Trip records
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<TripRequestDto> getAll() {
-        return tripService.getAll();
+    public List<TripResponseDto> getAll() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        return tripService.getAllUserTrips(currentUserId.intValue());
     }
 
     //get Trip by countryName
@@ -68,11 +70,14 @@ public class TripController {
     //update Trip record
     @PutMapping("/{tripId}")
     @ResponseStatus(HttpStatus.OK)
-    public TripRequestDto updateTrip(@PathVariable("tripId") Integer tripId, @RequestHeader("Authorization") String authorizationHeader,
-                           @RequestBody TripRequestDto dto) {
+    public TripResponseDto updateTrip(@PathVariable("tripId") Integer tripId, @RequestHeader("Authorization") String authorizationHeader,
+                                      @RequestBody TripRequestDto dto) {
         String token = authService.extractBearerToken(authorizationHeader);
         UserMeResponse userMeResponse = authService.me(token);
-        return tripService.update(userMeResponse.getId(), dto);
+
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        return tripService.update(tripId, currentUserId.intValue(), dto);
     }
 
     //delete Trip record
