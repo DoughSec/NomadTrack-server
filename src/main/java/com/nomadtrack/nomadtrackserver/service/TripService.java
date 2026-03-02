@@ -4,6 +4,7 @@ import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class TripService {
     }
 
     // create Trip
-    public TripRequestDto create(
+    public TripResponseDto create(
             Integer userId, String title, String city, String country, LocalDate startDate, LocalDate endDate,
             String notes, BigDecimal latitude, BigDecimal longitude, String visibility
     ) {
@@ -53,46 +54,69 @@ public class TripService {
         trip.setLongitude(longitude);
         trip.setVisibility(visibility);
 
-        TripRequestDto tripRequestDto = new TripRequestDto();
-        tripRequestDto.setTitle(title);
-        tripRequestDto.setCity(city);
-        tripRequestDto.setCountry(country);
-        tripRequestDto.setStartDate(startDate);
-        tripRequestDto.setEndDate(endDate);
-        tripRequestDto.setNotes(notes);
-        tripRequestDto.setLatitude(latitude);
-        tripRequestDto.setLongitude(longitude);
-        tripRequestDto.setVisibility(visibility);
-
         tripRepository.save(trip);
 
-        return tripRequestDto;
+        TripResponseDto tripResponseDto = new TripResponseDto();
+        tripResponseDto.setId(trip.getId());
+        tripResponseDto.setUserId(user.getId());
+        tripResponseDto.setTitle(title);
+        tripResponseDto.setCity(city);
+        tripResponseDto.setCountry(country);
+        tripResponseDto.setStartDate(startDate);
+        tripResponseDto.setEndDate(endDate);
+        tripResponseDto.setNotes(notes);
+        tripResponseDto.setLatitude(latitude);
+        tripResponseDto.setLongitude(longitude);
+        tripResponseDto.setVisibility(visibility);
+
+
+        return tripResponseDto;
     }
 
     // getAllUserTrips
     @Transactional(readOnly = true)
-    public List<Trip> listAll() {
-        return tripRepository.findAll();
-    }
-
-    // getAllUserTrips
-    @Transactional(readOnly = true)
-    public List<TripRequestDto> getAll() {
+    public List<TripResponseDto> getAllUserTrips(Integer userId) {
         List<Trip> trips = tripRepository.findAll();
-        List<TripRequestDto> tripRequestDtos = new ArrayList<>();
+        List<TripResponseDto> tripResponseDtos = new ArrayList<>();
         for (Trip trip : trips) {
-            TripRequestDto tripRequestDto = new TripRequestDto();
-            tripRequestDto.setTitle(trip.getTitle());
-            tripRequestDto.setCity(trip.getCity());
-            tripRequestDto.setCountry(trip.getCountry());
-            tripRequestDto.setStartDate(trip.getStartDate());
-            tripRequestDto.setEndDate(trip.getEndDate());
-            tripRequestDto.setNotes(trip.getNotes());
-            tripRequestDto.setLatitude(trip.getLatitude());
-            tripRequestDto.setLongitude(trip.getLongitude());
-            tripRequestDtos.add(tripRequestDto);
+            if(trip.getUser().getId().equals(userId)) {
+                TripResponseDto tripResponseDto = new TripResponseDto();
+                tripResponseDto.setId(trip.getId());
+                tripResponseDto.setUserId(trip.getUser().getId());
+                tripResponseDto.setTitle(trip.getTitle());
+                tripResponseDto.setCity(trip.getCity());
+                tripResponseDto.setCountry(trip.getCountry());
+                tripResponseDto.setStartDate(trip.getStartDate());
+                tripResponseDto.setEndDate(trip.getEndDate());
+                tripResponseDto.setNotes(trip.getNotes());
+                tripResponseDto.setLatitude(trip.getLatitude());
+                tripResponseDto.setLongitude(trip.getLongitude());
+                tripResponseDtos.add(tripResponseDto);
+            }
+
         }
-        return tripRequestDtos;
+        return tripResponseDtos;
+    }
+    // getAllUserTrips
+    @Transactional(readOnly = true)
+    public List<TripResponseDto> getAll() {
+        List<Trip> trips = tripRepository.findAll();
+        List<TripResponseDto> tripResponseDtos = new ArrayList<>();
+        for (Trip trip : trips) {
+            TripResponseDto tripResponseDto = new TripResponseDto();
+            tripResponseDto.setId(trip.getId());
+            tripResponseDto.setUserId(trip.getUser().getId());
+            tripResponseDto.setTitle(trip.getTitle());
+            tripResponseDto.setCity(trip.getCity());
+            tripResponseDto.setCountry(trip.getCountry());
+            tripResponseDto.setStartDate(trip.getStartDate());
+            tripResponseDto.setEndDate(trip.getEndDate());
+            tripResponseDto.setNotes(trip.getNotes());
+            tripResponseDto.setLatitude(trip.getLatitude());
+            tripResponseDto.setLongitude(trip.getLongitude());
+            tripResponseDtos.add(tripResponseDto);
+        }
+        return tripResponseDtos;
     }
 
     // getById
@@ -150,9 +174,14 @@ public class TripService {
     }
 
     // update Trip
-    public TripRequestDto update(Integer tripId, TripRequestDto updated) {
+    public TripResponseDto update(Integer tripId, Integer userId, TripRequestDto updated) {
         Trip existing = getById(tripId);
 
+        if(!userId.equals(existing.getUser().getId())) {
+            throw new IllegalArgumentException("Cannot update trip that isn't yours: userId=" + userId + " tripOwnerId=" + existing.getUser().getId());
+        }
+
+        existing.setUser(existing.getUser());
         existing.setTitle(updated.getTitle());
         existing.setCity(updated.getCity());
         existing.setCountry(updated.getCountry());
@@ -163,19 +192,23 @@ public class TripService {
         existing.setLongitude(updated.getLongitude());
         existing.setVisibility(updated.getVisibility());
 
-        TripRequestDto tripRequestDto = new TripRequestDto();
-        tripRequestDto.setTitle(updated.getTitle());
-        tripRequestDto.setCity(updated.getCity());
-        tripRequestDto.setCountry(updated.getCountry());
-        tripRequestDto.setStartDate(updated.getStartDate());
-        tripRequestDto.setEndDate(updated.getEndDate());
-        tripRequestDto.setNotes(updated.getNotes());
-        tripRequestDto.setLatitude(updated.getLatitude());
-        tripRequestDto.setLongitude(updated.getLongitude());
-        tripRequestDto.setVisibility(updated.getVisibility());
         tripRepository.save(existing);
 
-        return tripRequestDto;
+        TripResponseDto tripResponseDto = new TripResponseDto();
+        tripResponseDto.setId(tripId);
+        tripResponseDto.setUserId(userId);
+        tripResponseDto.setTitle(updated.getTitle());
+        tripResponseDto.setCity(updated.getCity());
+        tripResponseDto.setCountry(updated.getCountry());
+        tripResponseDto.setStartDate(updated.getStartDate());
+        tripResponseDto.setEndDate(updated.getEndDate());
+        tripResponseDto.setNotes(updated.getNotes());
+        tripResponseDto.setLatitude(updated.getLatitude());
+        tripResponseDto.setLongitude(updated.getLongitude());
+        tripResponseDto.setVisibility(updated.getVisibility());
+
+
+        return tripResponseDto;
     }
 
     // delete Trip
