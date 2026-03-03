@@ -30,13 +30,13 @@ public class UserService {
 
     // create User
     public User create(
-            String firstName, String lastName, String avatarURL, String email, String passwordHash,
+            String firstName, String lastName, String avatarUrl, String email, String passwordHash,
             String bio, String address, String role
     ) {
         User user = new User();
         user.setFirstName(firstName);
         user.setLastName(lastName);
-        user.setAvatarURL(avatarURL);
+        user.setAvatarUrl(avatarUrl);
         user.setEmail(email);
         user.setPasswordHash(passwordHash);
         user.setBio(bio);
@@ -75,7 +75,7 @@ public class UserService {
             UserSearchProfileDto userSearchProfileDto = new UserSearchProfileDto();
             userSearchProfileDto.setFirstName(user.getFirstName());
             userSearchProfileDto.setLastName(user.getLastName());
-            userSearchProfileDto.setAvatarURL(user.getAvatarURL());
+            userSearchProfileDto.setAvatarUrl(user.getAvatarUrl());
             userSearchProfileDto.setBio(user.getBio());
             userSearchProfileDtos.add(userSearchProfileDto);
         }
@@ -102,7 +102,7 @@ public class UserService {
             userSearchProfileDto.setId(user.getId());
             userSearchProfileDto.setFirstName(user.getFirstName());
             userSearchProfileDto.setLastName(user.getLastName());
-            userSearchProfileDto.setAvatarURL(user.getAvatarURL());
+            userSearchProfileDto.setAvatarUrl(user.getAvatarUrl());
             userSearchProfileDto.setBio(user.getBio());
             userSearchProfileDtos.add(userSearchProfileDto);
         }
@@ -132,21 +132,24 @@ public class UserService {
             existing.setBio(dto.getBio());
         }
 
-        if (dto.getAvatarURL() != null) {
-            existing.setAvatarURL(dto.getAvatarURL());
+        if (dto.getAvatarUrl() != null) {
+            existing.setAvatarUrl(dto.getAvatarUrl());
         }
 
         if (dto.getAddress() != null) {
             existing.setAddress(dto.getAddress());
         }
 
-        UserMeResponse userMeResponse = new UserMeResponse();
-        userMeResponse.setBio(dto.getBio());
-        userMeResponse.setFirstName(dto.getFirstName());
-        userMeResponse.setLastName(dto.getLastName());
-        userMeResponse.setAddress(dto.getAddress());
+        User saved = userRepository.save(existing);
 
-        userRepository.save(existing);
+        UserMeResponse userMeResponse = new UserMeResponse();
+        userMeResponse.setId(saved.getId());
+        userMeResponse.setEmail(saved.getEmail());
+        userMeResponse.setFirstName(saved.getFirstName());
+        userMeResponse.setLastName(saved.getLastName());
+        userMeResponse.setBio(saved.getBio());
+        userMeResponse.setAddress(saved.getAddress());
+        userMeResponse.setAvatarUrl(saved.getAvatarUrl());
 
         return userMeResponse;
     }

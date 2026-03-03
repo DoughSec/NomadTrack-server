@@ -105,11 +105,11 @@ public class FollowService {
                 follower.getId(),
                 follower.getFirstName(),
                 follower.getLastName(),
-                follower.getAvatarURL(),
+                follower.getAvatarUrl(),
                 followee.getId(),
                 followee.getFirstName(),
                 followee.getLastName(),
-                followee.getAvatarURL(),
+                followee.getAvatarUrl(),
                 follow.getCreatedAt()
         );
     }
