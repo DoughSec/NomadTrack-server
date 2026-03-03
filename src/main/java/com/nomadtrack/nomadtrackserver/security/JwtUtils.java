@@ -38,6 +38,22 @@ public class JwtUtils {
                 .compact();
     }
 
+    public String createJWT(String id, String issuer, String subject, long ttlMillis, String role) {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+        Date expiration = new Date(nowMillis + ttlMillis);
+
+        return Jwts.builder()
+                .setId(id)
+                .setIssuedAt(now)
+                .setSubject(subject)
+                .setIssuer(issuer)
+                .setExpiration(expiration)
+                .claim("role", role)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public Claims decodeJWT(String jwt) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
