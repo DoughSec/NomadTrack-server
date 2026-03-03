@@ -1,8 +1,10 @@
 package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
+import com.nomadtrack.nomadtrackserver.security.JwtUtils;
 import com.nomadtrack.nomadtrackserver.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,8 @@ public class UserServiceTest {
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private JwtUtils jwtUtils;
 
     @InjectMocks
     private UserService userService;
@@ -44,7 +48,7 @@ public class UserServiceTest {
         user.setPasswordHash("hashedPassword");
         user.setBio("bio");
         user.setAddress("123 Main St");
-        user.setRole("USER");
+        user.setRole("ROLE_USER");
     }
 
     @Test
@@ -52,7 +56,7 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         User result = userService.create("test1", "test2", "avatar.png",
-                "test1test2@test.com", "hashedPassword", "bio", "123 Main St", "USER");
+                "test1test2@test.com", "hashedPassword", "bio", "123 Main St", "ROLE_USER");
 
         assertNotNull(result);
         assertEquals("John", result.getFirstName());
@@ -109,17 +113,16 @@ public class UserServiceTest {
         dto.setFirstName("updateTest");
         dto.setLastName("updateTest");
         dto.setAvatarURL("new.png");
-        dto.setEmail("update@test.com");
-        dto.setPasswordHash("newHash");
         dto.setBio("new bio");
         dto.setAddress("1999 Main st");
 
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        User result = userService.update(1, dto);
+        UserMeResponse result = userService.update(1, dto);
 
         assertNotNull(result);
+        assertEquals("updateTest", result.getFirstName());
         verify(userRepository).save(any(User.class));
     }
 

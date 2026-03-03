@@ -99,10 +99,12 @@ public class TripCommentServiceTest {
 
     @Test
     void update_success() {
+        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
 
-        TripCommentResponseDto result = tripCommentService.update(1, 1, "Updated comment");
+        // update(tripId, commentId, userId, comment)
+        TripCommentResponseDto result = tripCommentService.update(1, 1, 1, "Updated comment");
 
         assertEquals("Updated comment", result.getComment());
         verify(tripCommentRepository).save(any(TripComment.class));
@@ -110,17 +112,19 @@ public class TripCommentServiceTest {
 
     @Test
     void update_notFound_throws() {
-        when(tripCommentRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
+        when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> tripCommentService.update(1, 99, "updated"));
+                () -> tripCommentService.update(1, 99, 1, "updated"));
     }
 
     @Test
     void delete_success() {
+        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
 
-        tripCommentService.delete(1, 1);
+        // delete(tripId, userId, commentId)
+        tripCommentService.delete(1, 1, 1);
 
         verify(tripCommentRepository).delete(tripComment);
     }
@@ -128,14 +132,14 @@ public class TripCommentServiceTest {
     @Test
     void delete_nullId_throws() {
         assertThrows(IllegalArgumentException.class,
-                () -> tripCommentService.delete(1, null));
+                () -> tripCommentService.delete(1, 1, null));
     }
 
     @Test
     void delete_notFound_throws() {
-        when(tripCommentRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
+        when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> tripCommentService.delete(1, 99));
+                () -> tripCommentService.delete(1, 1, 99));
     }
 }

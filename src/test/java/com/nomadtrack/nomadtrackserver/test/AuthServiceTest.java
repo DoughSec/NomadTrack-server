@@ -12,15 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,7 +29,7 @@ public class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
-    private JwtUtils JwtUtils;
+    private JwtUtils jwtUtils;
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -46,22 +44,20 @@ public class AuthServiceTest {
         user.setFirstName("John");
         user.setLastName("Doe");
         user.setPasswordHash("hashedPassword");
+        user.setRole("ROLE_USER");
     }
 
     @Test
     void login_success() {
         when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("rawPassword", "hashedPassword")).thenReturn(true);
+        when(jwtUtils.createJWT(anyString(), anyString(), anyString(), anyLong(), anyString()))
+                .thenReturn("mock-token");
 
-        try (MockedStatic<JwtUtils> jwtMock = mockStatic(JwtUtils.class)) {
-            jwtMock.when(() -> JwtUtils.createJWT(anyString(), anyString(), anyString(), anyLong()))
-                    .thenReturn("mock-token");
+        LoginResponseDto result = authenticationService.login("john@test.com", "rawPassword");
 
-            LoginResponseDto result = authenticationService.login("john@test.com", "rawPassword");
-
-            assertNotNull(result);
-            assertEquals("mock-token", result.getAccessToken());
-        }
+        assertNotNull(result);
+        assertEquals("mock-token", result.getAccessToken());
     }
 
     @Test
@@ -85,32 +81,26 @@ public class AuthServiceTest {
     void me_success() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("john@test.com");
+        when(jwtUtils.decodeJWT("mock-token")).thenReturn(claims);
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
 
-        try (MockedStatic<JwtUtils> jwtMock = mockStatic(JwtUtils.class)) {
-            jwtMock.when(() -> JwtUtils.decodeJWT("mock-token")).thenReturn(claims);
-            when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+        UserMeResponse result = authenticationService.me("mock-token");
 
-            UserMeResponse result = authenticationService.me("mock-token");
-
-            assertNotNull(result);
-            assertEquals(1, result.getId());
-            assertEquals("john@test.com", result.getEmail());
-            assertEquals("John", result.getFirstName());
-            assertEquals("Doe", result.getLastName());
-        }
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("john@test.com", result.getEmail());
+        assertEquals("John", result.getFirstName());
+        assertEquals("Doe", result.getLastName());
     }
 
     @Test
     void me_userNotFound_throws() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("missing@test.com");
+        when(jwtUtils.decodeJWT("mock-token")).thenReturn(claims);
+        when(userRepository.findByEmail("missing@test.com")).thenReturn(Optional.empty());
 
-        try (MockedStatic<JwtUtils> jwtMock = mockStatic(JwtUtils.class)) {
-            jwtMock.when(() -> JwtUtils.decodeJWT("mock-token")).thenReturn(claims);
-            when(userRepository.findByEmail("missing@test.com")).thenReturn(Optional.empty());
-
-            assertThrows(IllegalArgumentException.class,
-                    () -> authenticationService.me("mock-token"));
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> authenticationService.me("mock-token"));
     }
 }
