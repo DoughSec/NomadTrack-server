@@ -45,24 +45,31 @@ public class FollowController {
         followService.unfollow(currentUserId, userId);
     }
 
-    // get current users a user follows
+    // get current user's following list
     @GetMapping("/following")
     public List<FollowDto> getFollowing(@RequestHeader("Authorization") String authorizationHeader) {
-
         String token = authService.extractBearerToken(authorizationHeader);
         UserMeResponse userMeResponse = authService.me(token);
-        Integer currentUserId = userMeResponse.getId();
-
-        return followService.getFollowing(currentUserId);
+        return followService.getFollowing(userMeResponse.getId());
     }
 
-    // get current user's followers
+    // get current user's followers list
     @GetMapping("/followers")
     public List<FollowDto> getFollowers(@RequestHeader("Authorization") String authorizationHeader) {
         String token = authService.extractBearerToken(authorizationHeader);
         UserMeResponse userMeResponse = authService.me(token);
-        Integer currentUserId = userMeResponse.getId();
+        return followService.getFollowers(userMeResponse.getId());
+    }
 
-        return followService.getFollowers(currentUserId);
+    // get any user's following list by userId
+    @GetMapping("/{userId}/following")
+    public List<FollowDto> getFollowingByUserId(@PathVariable Integer userId) {
+        return followService.getFollowing(userId);
+    }
+
+    // get any user's followers list by userId
+    @GetMapping("/{userId}/followers")
+    public List<FollowDto> getFollowersByUserId(@PathVariable Integer userId) {
+        return followService.getFollowers(userId);
     }
 }

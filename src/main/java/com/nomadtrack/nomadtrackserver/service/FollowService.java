@@ -5,8 +5,8 @@ import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.FollowDto;
 import com.nomadtrack.nomadtrackserver.repository.FollowRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -74,14 +74,14 @@ public class FollowService {
     }
 
     //Get all users that this user is following
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FollowDto> getFollowing(Integer followerId) {
         return followRepository.findAllByFollower_Id(followerId)
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     // Get all followers of a user
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FollowDto> getFollowers(Integer followeeId) {
         return followRepository.findAllByFollowee_Id(followeeId)
                 .stream().map(this::toDto).collect(Collectors.toList());
