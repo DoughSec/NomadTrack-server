@@ -9,6 +9,8 @@ public class UserSearchProfileDto {
     private Integer id;
     private String firstName;
     private String lastName;
-    private String avatarURL;
+    private String avatarUrl;
     private String bio;
+    private Integer followerCount;
+    private Integer followingCount;
 }
