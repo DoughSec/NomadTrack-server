@@ -40,7 +40,8 @@ public class AuthenticationService {
                 String.valueOf(user.getId()), // token id
                 "nomadTrack",                  // issuer
                 user.getEmail(),               // subject
-                TTL_MILLIS
+                TTL_MILLIS,
+                user.getRole()                 // role claim
         );
 
         return new LoginResponseDto(token, TTL_MILLIS / 1000);
