@@ -2,6 +2,8 @@ package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.TripResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.TripService;
@@ -28,7 +30,6 @@ public class TripServiceTest {
     @Mock
     private UserRepository userRepository;
 
-
     @InjectMocks
     private TripService tripService;
 
@@ -37,8 +38,6 @@ public class TripServiceTest {
 
     @BeforeEach
     void setUp() {
-        trip = new Trip();
-        trip.setId(1);
         user = new User();
         user.setId(1);
         trip = new Trip();
@@ -53,7 +52,6 @@ public class TripServiceTest {
         trip.setLatitude(new BigDecimal(1));
         trip.setLongitude(new BigDecimal(1));
         trip.setVisibility("Public");
-
     }
 
     @Test
@@ -61,7 +59,7 @@ public class TripServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(tripRepository.save(any(Trip.class))).thenReturn(trip);
 
-        Trip result = tripService.create(1, "test", "Columbus", "United States",
+        TripResponseDto result = tripService.create(1, "test", "Columbus", "United States",
                 LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2),
                 "notes", new BigDecimal(1), new BigDecimal(1), "Public");
 
@@ -89,10 +87,9 @@ public class TripServiceTest {
 
     @Test
     void getAll_returnsList() {
-        when(tripRepository.findAll())
-                .thenReturn(List.of(trip));
+        when(tripRepository.findAll()).thenReturn(List.of(trip));
 
-        List<Trip> results = tripService.getAll();
+        List<TripResponseDto> results = tripService.getAllMyTrips(1);
 
         assertEquals(1, results.size());
     }
@@ -127,7 +124,6 @@ public class TripServiceTest {
         Trip noCoords = new Trip();
         noCoords.setId(2);
         noCoords.setCity("NoCoords");
-        // latitude and longitude are null
 
         when(tripRepository.findAll()).thenReturn(List.of(trip, noCoords));
 
@@ -138,10 +134,21 @@ public class TripServiceTest {
 
     @Test
     void update_success() {
+        TripRequestDto dto = new TripRequestDto();
+        dto.setTitle("testTitle");
+        dto.setCity("testCity");
+        dto.setCountry("testCountry");
+        dto.setStartDate(LocalDate.of(2020, 1, 1));
+        dto.setEndDate(LocalDate.of(2020, 1, 2));
+        dto.setNotes("testNotes");
+        dto.setLatitude(new BigDecimal(1));
+        dto.setLongitude(new BigDecimal(1));
+        dto.setVisibility("Public");
+
         when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
         when(tripRepository.save(any(Trip.class))).thenReturn(trip);
 
-        Trip result = tripService.update(1, this.trip);
+        TripResponseDto result = tripService.update(1, 1, dto);
 
         assertEquals("testTitle", result.getTitle());
         verify(tripRepository).save(any(Trip.class));

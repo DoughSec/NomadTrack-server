@@ -2,6 +2,8 @@ package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.model.Wishlist;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
+import com.nomadtrack.nomadtrackserver.model.dto.WishlistResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.WishlistRepository;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.WishlistService;
@@ -45,8 +47,8 @@ public class WishlistServiceTest {
         wishlist.setTargetCountry("targetCountry");
         wishlist.setTargetCity("targetCity");
         wishlist.setDeadline(LocalDate.of(2027, 1, 1));
-        wishlist.setCompleted(true);
-        wishlist.setCompletedDate(LocalDate.now());
+        wishlist.setCompleted(false);
+        wishlist.setCompletedDate(null);
     }
 
     @Test
@@ -54,9 +56,8 @@ public class WishlistServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(wishlistRepository.save(any(Wishlist.class))).thenReturn(wishlist);
 
-        Wishlist result = wishlistService.create(1, "testTitle", "testDescription",
-                "targetCountry", "targetCity", LocalDate.of(2027, 1, 1),
-                true, LocalDate.now());
+        WishlistResponseDto result = wishlistService.create(1, "testTitle", "testDescription",
+                "targetCountry", "targetCity", LocalDate.of(2027, 1, 1));
 
         assertNotNull(result);
         verify(wishlistRepository).save(any(Wishlist.class));
@@ -66,8 +67,7 @@ public class WishlistServiceTest {
     void create_nullUserId_throws() {
         assertThrows(IllegalArgumentException.class,
                 () -> wishlistService.create(null, "testTitle", "testDescription",
-                        "targetCountry", "targetCity", LocalDate.of(2027, 1, 1),
-                        false, null));
+                        "targetCountry", "targetCity", LocalDate.of(2027, 1, 1)));
     }
 
     @Test
@@ -76,17 +76,7 @@ public class WishlistServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> wishlistService.create(99, "testTitle", "testDescription",
-                        "targetCountry", "targetCity", LocalDate.of(2027, 1, 1),
-                        false, null));
-    }
-
-    @Test
-    void getAll_returnsList() {
-        when(wishlistRepository.findAll()).thenReturn(List.of(wishlist));
-
-        List<Wishlist> results = wishlistService.getAll();
-
-        assertEquals(1, results.size());
+                        "targetCountry", "targetCity", LocalDate.of(2027, 1, 1)));
     }
 
     @Test
@@ -121,10 +111,11 @@ public class WishlistServiceTest {
 
     @Test
     void markComplete_true() {
+        wishlist.setCompleted(false);
         when(wishlistRepository.findById(1)).thenReturn(Optional.of(wishlist));
         when(wishlistRepository.save(any(Wishlist.class))).thenReturn(wishlist);
 
-        Wishlist result = wishlistService.markComplete(1, true);
+        WishlistResponseDto result = wishlistService.markComplete(1, true);
 
         assertTrue(result.isCompleted());
         verify(wishlistRepository).save(any(Wishlist.class));
@@ -132,20 +123,31 @@ public class WishlistServiceTest {
 
     @Test
     void markComplete_false() {
+        wishlist.setCompleted(true);
+        wishlist.setCompletedDate(LocalDate.now());
         when(wishlistRepository.findById(1)).thenReturn(Optional.of(wishlist));
         when(wishlistRepository.save(any(Wishlist.class))).thenReturn(wishlist);
 
-        wishlistService.markComplete(1, false);
+        WishlistResponseDto result = wishlistService.markComplete(1, false);
 
+        assertFalse(result.isCompleted());
+        assertNull(result.getCompletedDate());
         verify(wishlistRepository).save(any(Wishlist.class));
     }
 
     @Test
     void update_success() {
+        WishlistRequestDto dto = new WishlistRequestDto();
+        dto.setTitle("testTitle");
+        dto.setDescription("testDescription");
+        dto.setTargetCountry("targetCountry");
+        dto.setTargetCity("targetCity");
+        dto.setDeadline(LocalDate.of(2027, 1, 1));
+
         when(wishlistRepository.findById(1)).thenReturn(Optional.of(wishlist));
         when(wishlistRepository.save(any(Wishlist.class))).thenReturn(wishlist);
 
-        Wishlist result = wishlistService.update(1, this.wishlist);
+        WishlistResponseDto result = wishlistService.update(1, dto, 1);
 
         assertEquals("testTitle", result.getTitle());
         verify(wishlistRepository).save(any(Wishlist.class));
@@ -154,8 +156,9 @@ public class WishlistServiceTest {
     @Test
     void delete_success() {
         when(wishlistRepository.existsById(1)).thenReturn(true);
+        when(wishlistRepository.findById(1)).thenReturn(Optional.of(wishlist));
 
-        wishlistService.delete(1);
+        wishlistService.delete(1, 1);
 
         verify(wishlistRepository).deleteById(1);
     }
@@ -163,7 +166,7 @@ public class WishlistServiceTest {
     @Test
     void delete_nullId_throws() {
         assertThrows(IllegalArgumentException.class,
-                () -> wishlistService.delete(null));
+                () -> wishlistService.delete(null, 1));
     }
 
     @Test
@@ -171,6 +174,6 @@ public class WishlistServiceTest {
         when(wishlistRepository.existsById(99)).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class,
-                () -> wishlistService.delete(99));
+                () -> wishlistService.delete(99, 1));
     }
 }
