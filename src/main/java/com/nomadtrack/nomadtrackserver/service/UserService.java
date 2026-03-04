@@ -1,12 +1,13 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserSearchProfileDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.security.JwtUtils;
-import io.jsonwebtoken.Claims;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,15 +87,18 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getById(Integer userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("UserId is required");
+            throw new BadRequestException("UserId is required");
         }
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 
     // getByFirstName
     @Transactional(readOnly = true)
     public List<UserSearchProfileDto> getByFirstName(String firstName) {
+        if (firstName == null) {
+            throw new BadRequestException("firstName is required");
+        }
         List<User> users = userRepository.findByFirstNameIgnoreCase(firstName);
         List<UserSearchProfileDto> userSearchProfileDtos = new ArrayList<>();
         for (User user : users) {
@@ -106,18 +110,14 @@ public class UserService {
             userSearchProfileDto.setBio(user.getBio());
             userSearchProfileDtos.add(userSearchProfileDto);
         }
-        if (firstName == null) {
-            throw new IllegalArgumentException("No user exists with name: " + firstName);
-        }
         return userSearchProfileDtos;
     }
-
 
     // update logged in user
     public UserMeResponse update(Integer userId, UserProfileDto dto) {
 
         User existing = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Only update fields that are allowed to change
         if (dto.getFirstName() != null) {
@@ -157,10 +157,10 @@ public class UserService {
     // delete User
     public void delete(Integer userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("UserId is required");
+            throw new BadRequestException("UserId is required");
         }
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("User not found: " + userId);
+            throw new ResourceNotFoundException("User not found: " + userId);
         }
         userRepository.deleteById(userId);
     }

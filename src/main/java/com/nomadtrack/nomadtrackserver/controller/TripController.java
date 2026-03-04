@@ -1,5 +1,6 @@
 package com.nomadtrack.nomadtrackserver.controller;
 
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
@@ -98,7 +99,7 @@ public class TripController {
         if(userMeResponse.getId().equals(tripToDelete.getUser().getId())) {
             tripService.delete(tripId);
         } else {
-            throw new IllegalArgumentException("Trip does not belong to the user");
+            throw new ForbiddenException("Trip does not belong to the user");
         }
     }
 

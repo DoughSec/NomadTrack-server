@@ -1,11 +1,10 @@
 package com.nomadtrack.nomadtrackserver.service;
 
-import com.nomadtrack.nomadtrackserver.model.Trip;
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Wishlist;
 import com.nomadtrack.nomadtrackserver.model.User;
-import com.nomadtrack.nomadtrackserver.model.Wishlist;
-import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
-import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
 import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
 import com.nomadtrack.nomadtrackserver.model.dto.WishlistResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.UserRepository;
@@ -37,11 +36,11 @@ public class WishlistService {
             Integer userId, String title, String description, String targetCountry, String targetCity, LocalDate deadline
     ) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException("userId is required");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         Wishlist wishlist = new Wishlist();
         wishlist.setUser(user);
@@ -90,7 +89,7 @@ public class WishlistService {
     @Transactional(readOnly = true)
     public List<Wishlist> getByUserId(Integer userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException("userId is required");
         }
         return wishlistRepository.findAllByUser_Id(userId);
     }
@@ -99,17 +98,17 @@ public class WishlistService {
     @Transactional(readOnly = true)
     public Wishlist getById(Integer wishlistId) {
         if (wishlistId == null) {
-            throw new IllegalArgumentException("WishlistId is required");
+            throw new BadRequestException("WishlistId is required");
         }
         return wishlistRepository.findById(wishlistId)
-                .orElseThrow(() -> new IllegalArgumentException("Wishlist not found: " + wishlistId));
+                .orElseThrow(() -> new ResourceNotFoundException("Wishlist not found: " + wishlistId));
     }
 
     // getByCountryName
     @Transactional(readOnly = true)
     public List<WishlistResponseDto> getByTargetCountry(String targetCountry, Integer userId) {
         if (targetCountry == null) {
-            throw new IllegalArgumentException("targetCountry is required");
+            throw new BadRequestException("targetCountry is required");
         }
         List<Wishlist> wishlists = wishlistRepository.findByTargetCountryIgnoreCase(targetCountry);
 
@@ -164,7 +163,7 @@ public class WishlistService {
         Wishlist existing = getById(WishlistId);
 
         if(!existing.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Must be called by the current user");
+            throw new ForbiddenException("Must be called by the current user");
         }
         existing.setDeadline(updated.getDeadline());
         existing.setDescription(updated.getDescription());
@@ -190,15 +189,15 @@ public class WishlistService {
     // delete Wishlist
     public void delete(Integer wishlistId, Integer userId) {
         if (wishlistId == null) {
-            throw new IllegalArgumentException("WishlistId is required");
+            throw new BadRequestException("WishlistId is required");
         }
         if (!wishlistRepository.existsById(wishlistId)) {
-            throw new IllegalArgumentException("Wishlist not found: " + wishlistId);
+            throw new ResourceNotFoundException("Wishlist not found: " + wishlistId);
         }
 
         Wishlist wishlist = getById(wishlistId);
         if (!wishlist.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Wishlist user not found: " + wishlistId);
+            throw new ForbiddenException("Cannot delete a wishlist that isn't yours: " + wishlistId);
         }
 
         wishlistRepository.deleteById(wishlistId);

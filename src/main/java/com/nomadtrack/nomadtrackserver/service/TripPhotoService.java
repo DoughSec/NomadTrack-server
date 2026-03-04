@@ -1,8 +1,10 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripPhoto;
-import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripPhotoResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripPhotoRepository;
@@ -31,11 +33,11 @@ public class TripPhotoService {
             Integer tripId, String url, String caption, Integer sortOrder
     ) {
         if (tripId == null) {
-            throw new IllegalArgumentException("tripId is required");
+            throw new BadRequestException("tripId is required");
         }
 
         Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
 
         TripPhoto tripPhoto = new TripPhoto();
         tripPhoto.setTrip(trip);
@@ -51,14 +53,14 @@ public class TripPhotoService {
             Integer tripId, Integer userId, String url, String caption, Integer sortOrder
     ) {
         if (tripId == null) {
-            throw new IllegalArgumentException("tripId is required");
+            throw new BadRequestException("tripId is required");
         }
 
         Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
 
         if (!trip.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Trip does not belong to the current user: " + tripId);
+            throw new ForbiddenException("Trip does not belong to the current user: " + tripId);
         }
 
         TripPhoto tripPhoto = new TripPhoto();
@@ -93,7 +95,7 @@ public class TripPhotoService {
         boolean tripBelongsToUser = userTrips.stream()
                 .anyMatch(trip -> trip.getId().equals(tripId));
         if (!tripBelongsToUser) {
-            throw new IllegalArgumentException("Trip not found for current user: " + tripId);
+            throw new ResourceNotFoundException("Trip not found for current user: " + tripId);
         }
         return tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId)
                 .stream()
@@ -112,10 +114,10 @@ public class TripPhotoService {
     // delete TripPhoto
     public void delete(Integer tripPhotoId) {
         if (tripPhotoId == null) {
-            throw new IllegalArgumentException("TripPhotoId is required");
+            throw new BadRequestException("TripPhotoId is required");
         }
         if (!tripPhotoRepository.existsById(tripPhotoId)) {
-            throw new IllegalArgumentException("TripPhoto not found: " + tripPhotoId);
+            throw new ResourceNotFoundException("TripPhoto not found: " + tripPhotoId);
         }
         tripPhotoRepository.deleteById(tripPhotoId);
     }
@@ -123,14 +125,14 @@ public class TripPhotoService {
     // deleteForUser - verifies photo's trip belongs to the current user before deleting
     public void deleteForUser(Integer tripPhotoId, Integer userId) {
         if (tripPhotoId == null) {
-            throw new IllegalArgumentException("TripPhotoId is required");
+            throw new BadRequestException("TripPhotoId is required");
         }
 
         TripPhoto tripPhoto = tripPhotoRepository.findById(tripPhotoId)
-                .orElseThrow(() -> new IllegalArgumentException("TripPhoto not found: " + tripPhotoId));
+                .orElseThrow(() -> new ResourceNotFoundException("TripPhoto not found: " + tripPhotoId));
 
         if (!tripPhoto.getTrip().getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("TripPhoto does not belong to the current user: " + tripPhotoId);
+            throw new ForbiddenException("TripPhoto does not belong to the current user: " + tripPhotoId);
         }
 
         tripPhotoRepository.deleteById(tripPhotoId);

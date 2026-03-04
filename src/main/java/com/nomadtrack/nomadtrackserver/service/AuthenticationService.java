@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.LoginResponseDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
@@ -30,10 +32,10 @@ public class AuthenticationService {
     public LoginResponseDto login(String email, String rawPassword) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new BadRequestException("Invalid email or password");
         }
 
         String token = JwtUtils.createJWT(
@@ -56,7 +58,7 @@ public class AuthenticationService {
         String email = claims.getSubject();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return new UserMeResponse(
                 user.getId(),
@@ -71,7 +73,7 @@ public class AuthenticationService {
 
     public String extractBearerToken(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Missing or invalid Authorization header");
+            throw new BadRequestException("Missing or invalid Authorization header");
         }
         return authorizationHeader.substring(7);
     }
