@@ -1,0 +1,69 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-2'
+    PROJECT_NAME = 'nomadtrack'
+    // Set these in Jenkins job config:
+    // ARTIFACTS_BUCKET = '...'
+    // BACKEND_INSTANCE_ID = 'i-...'
+  }
+
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+
+    stage('Build') {
+      steps { sh 'mvn -B clean compile' }
+    }
+
+    stage('Test') {
+      steps { sh 'mvn -B test' }
+    }
+
+    stage('Package') {
+      steps { sh 'mvn -B -DskipTests package' }
+    }
+
+    stage('Upload Artifact') {
+      steps {
+        sh '''
+          JAR=$(ls -1 target/*.jar | head -n 1)
+          echo "Uploading $JAR to s3://$ARTIFACTS_BUCKET/backend/nomadtrack.jar"
+          aws s3 cp "$JAR" "s3://$ARTIFACTS_BUCKET/backend/nomadtrack.jar" --region "$AWS_REGION"
+        '''
+      }
+    }
+
+    stage('Deploy to EC2 (SSM)') {
+      steps {
+        sh '''
+          aws ssm send-command \
+            --region "$AWS_REGION" \
+            --instance-ids "$BACKEND_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy NomadTrack backend" \
+            --parameters commands="[
+              \\"set -euxo pipefail\\",
+              \\"aws s3 cp s3://$ARTIFACTS_BUCKET/backend/nomadtrack.jar /opt/nomadtrack/nomadtrack.jar --region $AWS_REGION\\",
+              \\"DB_URL=$(aws ssm get-parameter --name /$PROJECT_NAME/prod/db/url --query Parameter.Value --output text --region $AWS_REGION)\\",
+              \\"DB_USER=$(aws ssm get-parameter --name /$PROJECT_NAME/prod/db/username --query Parameter.Value --output text --region $AWS_REGION)\\",
+              \\"DB_PASS=$(aws ssm get-parameter --name /$PROJECT_NAME/prod/db/password --with-decryption --query Parameter.Value --output text --region $AWS_REGION)\\",
+              \\"JWT=$(aws ssm get-parameter --name /$PROJECT_NAME/prod/jwt/secret --with-decryption --query Parameter.Value --output text --region $AWS_REGION)\\",
+              \\"CORS=$(aws ssm get-parameter --name /$PROJECT_NAME/prod/cors/origins --query Parameter.Value --output text --region $AWS_REGION)\\",
+              \\"cat > /etc/nomadtrack/nomadtrack.env <<EOF\\",
+              \\"SPRING_PROFILES_ACTIVE=prod\\",
+              \\"SERVER_PORT=8080\\",
+              \\"SPRING_DATASOURCE_URL=$DB_URL\\",
+              \\"SPRING_DATASOURCE_USERNAME=$DB_USER\\",
+              \\"SPRING_DATASOURCE_PASSWORD=$DB_PASS\\",
+              \\"JWT_SECRET=$JWT\\",
+              \\"CORS_ORIGINS=$CORS\\",
+              \\"EOF\\",
+              \\"systemctl restart nomadtrack.service\\",
+              \\"systemctl --no-pager status nomadtrack.service | head -n 50\\"
+            ]"
+        '''
+      }
+    }
+  }
+}
