@@ -1,5 +1,8 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
@@ -34,14 +37,14 @@ public class TripCommentService {
     // create TripComment
     public TripCommentResponseDto create(Integer tripId, Integer userId, String comment) {
         if (userId == null || tripId == null) {
-            throw new IllegalArgumentException("userId or tripId are required");
+            throw new BadRequestException("userId and tripId are required");
         }
 
         Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         TripComment tripComment = new TripComment();
         tripComment.setTrip(trip);
@@ -58,22 +61,21 @@ public class TripCommentService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    //
-
     // update TripComment - scoped to tripId
     public TripCommentResponseDto update(Integer tripId, Integer commentId, Integer userId, String comment) {
         if (tripId == null || commentId == null) {
-            throw new IllegalArgumentException("tripId and commentId are required");
+            throw new BadRequestException("tripId and commentId are required");
         }
 
         TripComment tripComment = tripCommentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found: " + commentId));
 
         if (!userId.equals(tripComment.getUser().getId())) {
-            throw new IllegalArgumentException("Cannot edit another user's comment");
+            throw new ForbiddenException("Cannot edit another user's comment");
         }
+
         TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Comment not found with id " + commentId + " on trip " + tripId));
 
         existing.setComment(comment);
@@ -83,18 +85,18 @@ public class TripCommentService {
     // delete TripComment - scoped to tripId
     public void delete(Integer tripId, Integer userId, Integer commentId) {
         if (tripId == null || commentId == null) {
-            throw new IllegalArgumentException("tripId and commentId are required");
+            throw new BadRequestException("tripId and commentId are required");
         }
 
         TripComment tripComment = tripCommentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found: " + commentId));
 
-        if(!userId.equals(tripComment.getUser().getId())) {
-            throw new IllegalArgumentException("Cannot delete another user's comment");
+        if (!userId.equals(tripComment.getUser().getId())) {
+            throw new ForbiddenException("Cannot delete another user's comment");
         }
 
         TripComment existing = tripCommentRepository.findByIdAndTrip_Id(commentId, tripId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Comment not found with id " + commentId + " on trip " + tripId));
         tripCommentRepository.delete(existing);
     }

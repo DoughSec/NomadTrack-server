@@ -1,5 +1,8 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
@@ -36,11 +39,11 @@ public class TripService {
             String notes, BigDecimal latitude, BigDecimal longitude, String visibility
     ) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException("userId is required");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         Trip trip = new Trip();
         trip.setUser(user);
@@ -126,17 +129,17 @@ public class TripService {
     @Transactional(readOnly = true)
     public Trip getById(Integer tripId) {
         if (tripId == null) {
-            throw new IllegalArgumentException("TripId is required");
+            throw new BadRequestException("TripId is required");
         }
         return tripRepository.findById(tripId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
     }
 
     // getByCountryName
     @Transactional(readOnly = true)
     public List<TripRequestDto> getByCountryName(String countryName) {
         if (countryName == null) {
-            throw new IllegalArgumentException("countryName is required");
+            throw new BadRequestException("countryName is required");
         }
         List<Trip> trips = tripRepository.findByCountryIgnoreCase(countryName);
 
@@ -181,7 +184,7 @@ public class TripService {
         Trip existing = getById(tripId);
 
         if(!userId.equals(existing.getUser().getId())) {
-            throw new IllegalArgumentException("Cannot update trip that isn't yours: userId=" + userId + " tripOwnerId=" + existing.getUser().getId());
+            throw new ForbiddenException("Cannot update trip that isn't yours: userId=" + userId + " tripOwnerId=" + existing.getUser().getId());
         }
 
         existing.setUser(existing.getUser());
@@ -217,11 +220,14 @@ public class TripService {
     // delete Trip
     public void delete(Integer tripId) {
         if (tripId == null) {
-            throw new IllegalArgumentException("TripId is required");
+            throw new BadRequestException("TripId is required");
         }
-        if (!tripRepository.existsById(tripId)) {
-            throw new IllegalArgumentException("Trip not found: " + tripId);
-        }
-        tripRepository.deleteById(tripId);
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
+        // Load collections into the session so JPA cascades the deletes
+        trip.getComments().size();
+        trip.getLikes().size();
+        trip.getPhotos().size();
+        tripRepository.delete(trip);
     }
 }

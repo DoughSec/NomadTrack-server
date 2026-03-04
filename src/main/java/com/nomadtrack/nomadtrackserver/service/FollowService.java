@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Follow;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.FollowDto;
@@ -28,22 +30,22 @@ public class FollowService {
     public FollowDto follow(Integer followerId, Integer followeeId) {
 
         if (followerId == null || followeeId == null) {
-            throw new IllegalArgumentException("FollowerId and FolloweeId must not be null");
+            throw new BadRequestException("FollowerId and FolloweeId must not be null");
         }
 
         if (followerId.equals(followeeId)) {
-            throw new IllegalArgumentException("A user cannot follow themselves");
+            throw new BadRequestException("A user cannot follow themselves");
         }
 
         if (followRepository.existsByFollower_IdAndFollowee_Id(followerId, followeeId)) {
-            throw new IllegalArgumentException("User is already following this user");
+            throw new BadRequestException("User is already following this user");
         }
 
         User followerUser = userRepository.findById(followerId)
-                .orElseThrow(() -> new IllegalArgumentException("Follower not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Follower not found"));
 
         User followeeUser = userRepository.findById(followeeId)
-                .orElseThrow(() -> new IllegalArgumentException("Followee not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Followee not found"));
 
         Follow relationship = new Follow();
         relationship.setFollower(followerUser);
@@ -58,7 +60,7 @@ public class FollowService {
 
         Follow relationship = followRepository
                 .findByFollower_IdAndFollowee_Id(followerId, followeeId)
-                .orElseThrow(() -> new IllegalArgumentException("Follow relationship does not exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("Follow relationship does not exist"));
 
         followRepository.delete(relationship);
     }

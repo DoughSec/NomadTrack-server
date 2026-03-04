@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.service;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.TripLike;
@@ -34,14 +36,14 @@ public class TripLikeService {
     // create TripLike
     public TripLikeResponseDto create(Integer tripId, Integer userId) {
         if (userId == null || tripId == null) {
-            throw new IllegalArgumentException("userId or tripId are required");
+            throw new BadRequestException("userId and tripId are required");
         }
 
         Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId));
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripId));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         TripLike tripLike = new TripLike();
         tripLike.setTrip(trip);
@@ -60,10 +62,10 @@ public class TripLikeService {
     // delete TripLike
     public void delete(Integer tripId, Integer likeId) {
         if (tripId == null || likeId == null) {
-            throw new IllegalArgumentException("tripId and likeId are required");
+            throw new BadRequestException("tripId and likeId are required");
         }
         TripLike tripLike = tripLikeRepository.findByIdAndTrip_Id(likeId, tripId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Like not found with id " + likeId + " on trip " + tripId));
         tripLikeRepository.delete(tripLike);
     }
