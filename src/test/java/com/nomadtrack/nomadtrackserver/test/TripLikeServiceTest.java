@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripLike;
 import com.nomadtrack.nomadtrackserver.model.User;
@@ -19,10 +21,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TripLikeServiceTest {
@@ -68,13 +68,13 @@ public class TripLikeServiceTest {
 
     @Test
     void create_nullUserId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripLikeService.create(1, null));
     }
 
     @Test
     void create_nullTripId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripLikeService.create(null, 1));
     }
 
@@ -82,7 +82,7 @@ public class TripLikeServiceTest {
     void create_tripNotFound_throws() {
         when(tripRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripLikeService.create(99, 1));
     }
 
@@ -91,7 +91,7 @@ public class TripLikeServiceTest {
         when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripLikeService.create(1, 99));
     }
 
@@ -108,7 +108,7 @@ public class TripLikeServiceTest {
 
     @Test
     void delete_success() {
-        when(tripLikeRepository.findByIdAndTrip_Id(1, 1)).thenReturn(java.util.Optional.of(tripLike));
+        when(tripLikeRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripLike));
 
         tripLikeService.delete(1, 1);
 
@@ -117,15 +117,15 @@ public class TripLikeServiceTest {
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripLikeService.delete(1, null));
     }
 
     @Test
     void delete_notFound_throws() {
-        when(tripLikeRepository.findByIdAndTrip_Id(99, 1)).thenReturn(java.util.Optional.empty());
+        when(tripLikeRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripLikeService.delete(1, 99));
     }
 }

@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.LoginResponseDto;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
@@ -64,7 +66,7 @@ public class AuthServiceTest {
     void login_emailNotFound_throws() {
         when(userRepository.findByEmail("bad@test.com")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> authenticationService.login("bad@test.com", "password"));
     }
 
@@ -73,7 +75,7 @@ public class AuthServiceTest {
         when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> authenticationService.login("john@test.com", "wrongPassword"));
     }
 
@@ -100,7 +102,7 @@ public class AuthServiceTest {
         when(jwtUtils.decodeJWT("mock-token")).thenReturn(claims);
         when(userRepository.findByEmail("missing@test.com")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> authenticationService.me("mock-token"));
     }
 }

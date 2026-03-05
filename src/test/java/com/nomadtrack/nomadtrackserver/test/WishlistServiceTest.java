@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Wishlist;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.WishlistRequestDto;
@@ -65,7 +67,7 @@ public class WishlistServiceTest {
 
     @Test
     void create_nullUserId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> wishlistService.create(null, "testTitle", "testDescription",
                         "targetCountry", "targetCity", LocalDate.of(2027, 1, 1)));
     }
@@ -74,7 +76,7 @@ public class WishlistServiceTest {
     void create_userNotFound_throws() {
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> wishlistService.create(99, "testTitle", "testDescription",
                         "targetCountry", "targetCity", LocalDate.of(2027, 1, 1)));
     }
@@ -90,7 +92,7 @@ public class WishlistServiceTest {
 
     @Test
     void getByUserId_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> wishlistService.getByUserId(null));
     }
 
@@ -105,7 +107,7 @@ public class WishlistServiceTest {
 
     @Test
     void getById_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> wishlistService.getById(null));
     }
 
@@ -165,7 +167,7 @@ public class WishlistServiceTest {
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> wishlistService.delete(null, 1));
     }
 
@@ -173,7 +175,7 @@ public class WishlistServiceTest {
     void delete_notFound_throws() {
         when(wishlistRepository.existsById(99)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> wishlistService.delete(99, 1));
     }
 }

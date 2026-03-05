@@ -1,11 +1,11 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripPhoto;
-import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.repository.TripPhotoRepository;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
-import com.nomadtrack.nomadtrackserver.repository.UserRepository;
 import com.nomadtrack.nomadtrackserver.service.TripPhotoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ public class TripPhotoServiceTest {
 
     @Test
     void create_nullTripId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripPhotoService.create(null, "test", "comment", 1));
     }
 
@@ -67,7 +67,7 @@ public class TripPhotoServiceTest {
     void create_tripNotFound_throws() {
         when(tripRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripPhotoService.create(99, "test", "comment", 1));
     }
 
@@ -92,7 +92,7 @@ public class TripPhotoServiceTest {
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripPhotoService.delete(null));
     }
 }
