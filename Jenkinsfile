@@ -22,23 +22,36 @@ pipeline {
     }
 
     stage('Build') {
-      steps {
-        sh 'mvn -B clean compile'
-      }
+        steps {
+            sh '''
+            export JAVA_HOME=/usr/lib/jvm/java-25-amazon-corretto
+            export PATH=$JAVA_HOME/bin:$PATH
+            java -version
+            mvn -B clean compile
+            '''
+        }
     }
 
-    stage('Test') {
-      steps {
-        sh 'mvn -B test'
-      }
-    }
 
-    stage('Package') {
-      steps {
-        sh 'mvn -B -DskipTests package'
-        sh 'ls -la target'
-      }
+stage('Test') {
+    steps {
+        sh '''
+        export JAVA_HOME=/usr/lib/jvm/java-25-amazon-corretto
+        export PATH=$JAVA_HOME/bin:$PATH
+        mvn -B test
+        '''
     }
+}
+
+stage('Package') {
+    steps {
+        sh '''
+        export JAVA_HOME=/usr/lib/jvm/java-25-amazon-corretto
+        export PATH=$JAVA_HOME/bin:$PATH
+        mvn -B -DskipTests package
+        '''
+    }
+}
 
     stage('Upload Artifact to S3') {
       steps {
