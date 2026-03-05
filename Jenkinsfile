@@ -92,21 +92,24 @@ stage('Package') {
 
             echo "Create/Update systemd service..."
             sudo tee /etc/systemd/system/nomadtrack.service > /dev/null <<'EOF'
-            [Unit]
-            Description=NomadTrack Spring Boot API
-            After=network.target
+[Unit]
+Description=NomadTrack Spring Boot API
+After=network.target
 
-            [Service]
-            User=ec2-user
-            WorkingDirectory=/opt/nomadtrack
-            Environment=SPRING_PROFILES_ACTIVE=prod
-            ExecStart=/usr/bin/java -jar /opt/nomadtrack/app.jar
-            Restart=always
-            RestartSec=5
+[Service]
+User=ec2-user
+WorkingDirectory=/opt/nomadtrack
+EnvironmentFile=/opt/nomadtrack/.env
+Environment=SPRING_PROFILES_ACTIVE=prod
+ExecStart=/usr/bin/java -jar /opt/nomadtrack/app.jar
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
-            [Install]
-            WantedBy=multi-user.target
-            EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
             echo "Restart service..."
             sudo systemctl daemon-reload
