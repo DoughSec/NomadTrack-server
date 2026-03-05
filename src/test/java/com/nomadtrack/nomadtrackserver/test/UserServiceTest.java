@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.UserMeResponse;
 import com.nomadtrack.nomadtrackserver.model.dto.UserProfileDto;
@@ -43,7 +45,7 @@ public class UserServiceTest {
         user.setId(1);
         user.setFirstName("John");
         user.setLastName("Doe");
-        user.setAvatarURL("avatar.png");
+        user.setAvatarUrl("avatar.png");
         user.setEmail("john@test.com");
         user.setPasswordHash("hashedPassword");
         user.setBio("bio");
@@ -95,7 +97,7 @@ public class UserServiceTest {
 
     @Test
     void getById_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> userService.getById(null));
     }
 
@@ -103,7 +105,7 @@ public class UserServiceTest {
     void getById_notFound_throws() {
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.getById(99));
     }
 
@@ -112,7 +114,7 @@ public class UserServiceTest {
         UserProfileDto dto = new UserProfileDto();
         dto.setFirstName("updateTest");
         dto.setLastName("updateTest");
-        dto.setAvatarURL("new.png");
+        dto.setAvatarUrl("new.png");
         dto.setBio("new bio");
         dto.setAddress("1999 Main st");
 
@@ -137,7 +139,7 @@ public class UserServiceTest {
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> userService.delete(null));
     }
 
@@ -145,7 +147,7 @@ public class UserServiceTest {
     void delete_notFound_throws() {
         when(userRepository.existsById(99)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.delete(99));
     }
 }

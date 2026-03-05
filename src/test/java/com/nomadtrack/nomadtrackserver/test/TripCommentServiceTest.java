@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
 import com.nomadtrack.nomadtrackserver.model.User;
@@ -68,13 +70,13 @@ public class TripCommentServiceTest {
 
     @Test
     void create_nullUserId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripCommentService.create(1, null, "comment"));
     }
 
     @Test
     void create_nullTripId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripCommentService.create(null, 1, "comment"));
     }
 
@@ -82,7 +84,7 @@ public class TripCommentServiceTest {
     void create_tripNotFound_throws() {
         when(tripRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripCommentService.create(99, 1, "comment"));
     }
 
@@ -103,7 +105,6 @@ public class TripCommentServiceTest {
         when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
 
-        // update(tripId, commentId, userId, comment)
         TripCommentResponseDto result = tripCommentService.update(1, 1, 1, "Updated comment");
 
         assertEquals("Updated comment", result.getComment());
@@ -114,7 +115,7 @@ public class TripCommentServiceTest {
     void update_notFound_throws() {
         when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripCommentService.update(1, 99, 1, "updated"));
     }
 
@@ -123,7 +124,6 @@ public class TripCommentServiceTest {
         when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
         when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
 
-        // delete(tripId, userId, commentId)
         tripCommentService.delete(1, 1, 1);
 
         verify(tripCommentRepository).delete(tripComment);
@@ -131,7 +131,7 @@ public class TripCommentServiceTest {
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripCommentService.delete(1, 1, null));
     }
 
@@ -139,7 +139,7 @@ public class TripCommentServiceTest {
     void delete_notFound_throws() {
         when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripCommentService.delete(1, 1, 99));
     }
 }

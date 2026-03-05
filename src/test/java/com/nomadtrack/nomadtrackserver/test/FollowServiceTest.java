@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Follow;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.FollowDto;
@@ -66,30 +68,30 @@ public class FollowServiceTest {
 
     @Test
     void follow_nullFollowerId_throws() {
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(null, 2));
+        assertThrows(BadRequestException.class, () -> followService.follow(null, 2));
     }
 
     @Test
     void follow_nullFolloweeId_throws() {
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(1, null));
+        assertThrows(BadRequestException.class, () -> followService.follow(1, null));
     }
 
     @Test
     void follow_selfFollow_throws() {
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(1, 1));
+        assertThrows(BadRequestException.class, () -> followService.follow(1, 1));
     }
 
     @Test
     void follow_alreadyFollowing_throws() {
         when(followRepository.existsByFollower_IdAndFollowee_Id(1, 2)).thenReturn(true);
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(1, 2));
+        assertThrows(BadRequestException.class, () -> followService.follow(1, 2));
     }
 
     @Test
     void follow_followerNotFound_throws() {
         when(followRepository.existsByFollower_IdAndFollowee_Id(1, 2)).thenReturn(false);
         when(userRepository.findById(1)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(1, 2));
+        assertThrows(ResourceNotFoundException.class, () -> followService.follow(1, 2));
     }
 
     @Test
@@ -97,7 +99,7 @@ public class FollowServiceTest {
         when(followRepository.existsByFollower_IdAndFollowee_Id(1, 2)).thenReturn(false);
         when(userRepository.findById(1)).thenReturn(Optional.of(follower));
         when(userRepository.findById(2)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> followService.follow(1, 2));
+        assertThrows(ResourceNotFoundException.class, () -> followService.follow(1, 2));
     }
 
     // --- unfollow() tests ---
@@ -115,7 +117,7 @@ public class FollowServiceTest {
     @Test
     void unfollow_notFound_throws() {
         when(followRepository.findByFollower_IdAndFollowee_Id(1, 2)).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> followService.unfollow(1, 2));
+        assertThrows(ResourceNotFoundException.class, () -> followService.unfollow(1, 2));
     }
 
     // --- isFollowing() tests ---

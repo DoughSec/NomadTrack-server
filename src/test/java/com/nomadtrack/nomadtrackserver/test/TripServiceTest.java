@@ -1,5 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
+import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +55,10 @@ public class TripServiceTest {
         trip.setLatitude(new BigDecimal(1));
         trip.setLongitude(new BigDecimal(1));
         trip.setVisibility("Public");
+        // Initialize lazy collections to avoid NPE during delete
+        trip.setComments(new ArrayList<>());
+        trip.setLikes(new ArrayList<>());
+        trip.setPhotos(new ArrayList<>());
     }
 
     @Test
@@ -69,7 +76,7 @@ public class TripServiceTest {
 
     @Test
     void create_nullUserId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripService.create(null, "test", "Columbus", "United States",
                         LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2),
                         "notes", new BigDecimal(1), new BigDecimal(1), "Public"));
@@ -79,7 +86,7 @@ public class TripServiceTest {
     void create_userNotFound_throws() {
         when(userRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripService.create(99, "test", "Columbus", "United States",
                         LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2),
                         "notes", new BigDecimal(1), new BigDecimal(1), "Public"));
@@ -105,7 +112,7 @@ public class TripServiceTest {
 
     @Test
     void getById_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripService.getById(null));
     }
 
@@ -156,24 +163,24 @@ public class TripServiceTest {
 
     @Test
     void delete_success() {
-        when(tripRepository.existsById(1)).thenReturn(true);
+        when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
 
         tripService.delete(1);
 
-        verify(tripRepository).deleteById(1);
+        verify(tripRepository).delete(trip);
     }
 
     @Test
     void delete_nullId_throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BadRequestException.class,
                 () -> tripService.delete(null));
     }
 
     @Test
     void delete_notFound_throws() {
-        when(tripRepository.existsById(99)).thenReturn(false);
+        when(tripRepository.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> tripService.delete(99));
     }
 }
