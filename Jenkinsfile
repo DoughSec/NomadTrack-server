@@ -12,6 +12,7 @@ pipeline {
     ARTIFACTS_BUCKET    = 'nomadtrack-artifacts-906ea42d'
     BACKEND_INSTANCE_ID = 'i-0f0f9ddf8bd0e6275'
     DEPLOY_SSM_DOCUMENT = 'AWS-RunShellScript'
+    APP_DIR = '/opt/nomadtrack'
   }
 
   stages {
