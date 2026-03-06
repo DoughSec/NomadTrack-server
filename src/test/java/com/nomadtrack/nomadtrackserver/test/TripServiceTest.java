@@ -1,9 +1,11 @@
 package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
 import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.User;
+import com.nomadtrack.nomadtrackserver.model.dto.MapPinDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripRequestDto;
 import com.nomadtrack.nomadtrackserver.model.dto.TripResponseDto;
 import com.nomadtrack.nomadtrackserver.repository.TripRepository;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TripServiceTest {
+
     @Mock
     private TripRepository tripRepository;
     @Mock
@@ -43,6 +46,7 @@ public class TripServiceTest {
     void setUp() {
         user = new User();
         user.setId(1);
+
         trip = new Trip();
         trip.setId(1);
         trip.setUser(user);
@@ -55,11 +59,12 @@ public class TripServiceTest {
         trip.setLatitude(new BigDecimal(1));
         trip.setLongitude(new BigDecimal(1));
         trip.setVisibility("Public");
-        // Initialize lazy collections to avoid NPE during delete
         trip.setComments(new ArrayList<>());
         trip.setLikes(new ArrayList<>());
         trip.setPhotos(new ArrayList<>());
     }
+
+    // --- create() ---
 
     @Test
     void create_success() {
@@ -72,6 +77,21 @@ public class TripServiceTest {
 
         assertNotNull(result);
         verify(tripRepository).save(any(Trip.class));
+    }
+
+    @Test
+    void create_dtoContainsCorrectFields() {
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(tripRepository.save(any(Trip.class))).thenReturn(trip);
+
+        TripResponseDto result = tripService.create(1, "testTitle", "testCity", "testCountry",
+                LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 2),
+                "testNotes", new BigDecimal(1), new BigDecimal(1), "Public");
+
+        assertEquals("testTitle", result.getTitle());
+        assertEquals("testCity", result.getCity());
+        assertEquals("testCountry", result.getCountry());
+        assertEquals(1, result.getUserId());
     }
 
     @Test
@@ -92,14 +112,75 @@ public class TripServiceTest {
                         "notes", new BigDecimal(1), new BigDecimal(1), "Public"));
     }
 
+    // --- getAllMyTrips() ---
+
     @Test
-    void getAll_returnsList() {
+    void getAllMyTrips_returnsList() {
         when(tripRepository.findAll()).thenReturn(List.of(trip));
 
         List<TripResponseDto> results = tripService.getAllMyTrips(1);
 
         assertEquals(1, results.size());
     }
+
+    @Test
+    void getAllMyTrips_filtersOtherUsers() {
+        User otherUser = new User();
+        otherUser.setId(2);
+        Trip otherTrip = new Trip();
+        otherTrip.setId(2);
+        otherTrip.setUser(otherUser);
+
+        when(tripRepository.findAll()).thenReturn(List.of(trip, otherTrip));
+
+        List<TripResponseDto> results = tripService.getAllMyTrips(1);
+
+        assertEquals(1, results.size());
+        assertEquals(1, results.getFirst().getUserId());
+    }
+
+    @Test
+    void getAllMyTrips_emptyWhenNoMatch() {
+        User otherUser = new User();
+        otherUser.setId(2);
+        Trip otherTrip = new Trip();
+        otherTrip.setId(2);
+        otherTrip.setUser(otherUser);
+
+        when(tripRepository.findAll()).thenReturn(List.of(otherTrip));
+
+        List<TripResponseDto> results = tripService.getAllMyTrips(1);
+
+        assertTrue(results.isEmpty());
+    }
+
+    // --- getAllUserTrips() ---
+
+    @Test
+    void getAllUserTrips_returnsList() {
+        when(tripRepository.findAll()).thenReturn(List.of(trip));
+
+        List<TripResponseDto> results = tripService.getAllUserTrips(1);
+
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void getAllUserTrips_filtersOtherUsers() {
+        User otherUser = new User();
+        otherUser.setId(2);
+        Trip otherTrip = new Trip();
+        otherTrip.setId(2);
+        otherTrip.setUser(otherUser);
+
+        when(tripRepository.findAll()).thenReturn(List.of(trip, otherTrip));
+
+        List<TripResponseDto> results = tripService.getAllUserTrips(1);
+
+        assertEquals(1, results.size());
+    }
+
+    // --- getById() ---
 
     @Test
     void getById_success() {
@@ -117,49 +198,88 @@ public class TripServiceTest {
     }
 
     @Test
-    void getMapPins_returnsPins() {
-        when(tripRepository.findAll()).thenReturn(List.of(trip));
+    void getById_notFound_throws() {
+        when(tripRepository.findById(99)).thenReturn(Optional.empty());
 
-        var pins = tripService.getMapPins();
+        assertThrows(ResourceNotFoundException.class,
+                () -> tripService.getById(99));
+    }
 
-        assertEquals(1, pins.size());
-        assertEquals("testCity", pins.get(0).getCity());
+    // --- getByCountryName() ---
+
+    @Test
+    void getByCountryName_success() {
+        when(tripRepository.findByCountryIgnoreCase("testCountry")).thenReturn(List.of(trip));
+
+        var results = tripService.getByCountryName("testCountry");
+
+        assertEquals(1, results.size());
+        assertEquals("testCountry", results.getFirst().getCountry());
     }
 
     @Test
-    void getMapPins_skipsNullCoordinates() {
-        Trip noCoords = new Trip();
-        noCoords.setId(2);
-        noCoords.setCity("NoCoords");
-
-        when(tripRepository.findAll()).thenReturn(List.of(trip, noCoords));
-
-        var pins = tripService.getMapPins();
-
-        assertEquals(1, pins.size());
+    void getByCountryName_nullCountry_throws() {
+        assertThrows(BadRequestException.class,
+                () -> tripService.getByCountryName(null));
     }
+
+    @Test
+    void getByCountryName_noResults_returnsEmpty() {
+        when(tripRepository.findByCountryIgnoreCase("Nowhere")).thenReturn(List.of());
+
+        var results = tripService.getByCountryName("Nowhere");
+
+        assertTrue(results.isEmpty());
+    }
+
+
+    // --- update() ---
 
     @Test
     void update_success() {
         TripRequestDto dto = new TripRequestDto();
-        dto.setTitle("testTitle");
-        dto.setCity("testCity");
-        dto.setCountry("testCountry");
-        dto.setStartDate(LocalDate.of(2020, 1, 1));
-        dto.setEndDate(LocalDate.of(2020, 1, 2));
-        dto.setNotes("testNotes");
-        dto.setLatitude(new BigDecimal(1));
-        dto.setLongitude(new BigDecimal(1));
-        dto.setVisibility("Public");
+        dto.setTitle("updatedTitle");
+        dto.setCity("updatedCity");
+        dto.setCountry("updatedCountry");
+        dto.setStartDate(LocalDate.of(2021, 3, 1));
+        dto.setEndDate(LocalDate.of(2021, 3, 10));
+        dto.setNotes("updatedNotes");
+        dto.setLatitude(new BigDecimal("2.5"));
+        dto.setLongitude(new BigDecimal("3.5"));
+        dto.setVisibility("Private");
 
         when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
         when(tripRepository.save(any(Trip.class))).thenReturn(trip);
 
         TripResponseDto result = tripService.update(1, 1, dto);
 
-        assertEquals("testTitle", result.getTitle());
+        assertEquals("updatedTitle", result.getTitle());
+        assertEquals("updatedCity", result.getCity());
+        assertEquals("Private", result.getVisibility());
         verify(tripRepository).save(any(Trip.class));
     }
+
+    @Test
+    void update_wrongOwner_throws() {
+        TripRequestDto dto = new TripRequestDto();
+        dto.setTitle("x");
+
+        when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
+
+        assertThrows(ForbiddenException.class,
+                () -> tripService.update(1, 99, dto));
+    }
+
+    @Test
+    void update_tripNotFound_throws() {
+        TripRequestDto dto = new TripRequestDto();
+        when(tripRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> tripService.update(99, 1, dto));
+    }
+
+    // --- delete() ---
 
     @Test
     void delete_success() {

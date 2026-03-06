@@ -63,6 +63,19 @@ public class AuthServiceTest {
     }
 
     @Test
+    void login_returnsCorrectExpiresIn() {
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("rawPassword", "hashedPassword")).thenReturn(true);
+        when(jwtUtils.createJWT(anyString(), anyString(), anyString(), anyLong(), anyString()))
+                .thenReturn("mock-token");
+
+        LoginResponseDto result = authenticationService.login("john@test.com", "rawPassword");
+
+        // TTL is 60 * 60 * 1000 ms, so expiresIn = 3600 seconds
+        assertEquals(3600L, result.getExpiresInSeconds());
+    }
+
+    @Test
     void login_emailNotFound_throws() {
         when(userRepository.findByEmail("bad@test.com")).thenReturn(Optional.empty());
 
@@ -96,6 +109,34 @@ public class AuthServiceTest {
     }
 
     @Test
+    void me_returnsAvatarUrl() {
+        user.setAvatarUrl("avatar.png");
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("john@test.com");
+        when(jwtUtils.decodeJWT("mock-token")).thenReturn(claims);
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+
+        UserMeResponse result = authenticationService.me("mock-token");
+
+        assertEquals("avatar.png", result.getAvatarUrl());
+    }
+
+    @Test
+    void me_returnsBioAndAddress() {
+        user.setBio("traveler bio");
+        user.setAddress("456 Elm St");
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("john@test.com");
+        when(jwtUtils.decodeJWT("mock-token")).thenReturn(claims);
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+
+        UserMeResponse result = authenticationService.me("mock-token");
+
+        assertEquals("traveler bio", result.getBio());
+        assertEquals("456 Elm St", result.getAddress());
+    }
+
+    @Test
     void me_userNotFound_throws() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("missing@test.com");
@@ -104,5 +145,29 @@ public class AuthServiceTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> authenticationService.me("mock-token"));
+    }
+
+    @Test
+    void extractBearerToken_success() {
+        String result = authenticationService.extractBearerToken("Bearer my-token-123");
+        assertEquals("my-token-123", result);
+    }
+
+    @Test
+    void extractBearerToken_nullHeader_throws() {
+        assertThrows(BadRequestException.class,
+                () -> authenticationService.extractBearerToken(null));
+    }
+
+    @Test
+    void extractBearerToken_invalidHeader_throws() {
+        assertThrows(BadRequestException.class,
+                () -> authenticationService.extractBearerToken("Token my-token-123"));
+    }
+
+    @Test
+    void extractBearerToken_emptyString_throws() {
+        assertThrows(BadRequestException.class,
+                () -> authenticationService.extractBearerToken(""));
     }
 }

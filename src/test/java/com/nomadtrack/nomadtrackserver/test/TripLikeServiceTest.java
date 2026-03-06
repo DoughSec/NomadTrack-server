@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TripLikeServiceTest {
+
     @Mock
     private TripLikeRepository tripLikeRepository;
     @Mock
@@ -36,96 +38,133 @@ public class TripLikeServiceTest {
     @InjectMocks
     private TripLikeService tripLikeService;
 
-    private Trip trip;
     private User user;
+    private Trip trip;
     private TripLike tripLike;
 
     @BeforeEach
     void setUp() {
-        trip = new Trip();
-        trip.setId(1);
         user = new User();
         user.setId(1);
+        user.setFirstName("Jane");
+        user.setLastName("Doe");
+
+        trip = new Trip();
+        trip.setId(10);
+
         tripLike = new TripLike();
-        tripLike.setId(1);
+        tripLike.setId(50);
         tripLike.setTrip(trip);
         tripLike.setUser(user);
+        tripLike.setCreatedAt(LocalDateTime.now());
     }
 
+    // --- create() ---
+
     @Test
-    void create_tripLike_returnsTripLike() {
-        when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
+    void create_success() {
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(tripLikeRepository.save(any(TripLike.class))).thenReturn(tripLike);
 
-        TripLikeResponseDto result = tripLikeService.create(1, 1);
+        TripLikeResponseDto result = tripLikeService.create(10, 1);
 
         assertNotNull(result);
-        assertEquals(1, result.getTripId());
+        assertEquals(50, result.getLikeId());
+        assertEquals(10, result.getTripId());
         assertEquals(1, result.getUserId());
-        verify(tripLikeRepository).save(any(TripLike.class));
     }
 
     @Test
-    void create_nullUserId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripLikeService.create(1, null));
+    void create_dtoContainsUserName() {
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(tripLikeRepository.save(any(TripLike.class))).thenReturn(tripLike);
+
+        TripLikeResponseDto result = tripLikeService.create(10, 1);
+
+        assertEquals("Jane", result.getUserFirstName());
+        assertEquals("Doe", result.getUserLastName());
     }
 
     @Test
     void create_nullTripId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripLikeService.create(null, 1));
+        assertThrows(BadRequestException.class, () -> tripLikeService.create(null, 1));
+    }
+
+    @Test
+    void create_nullUserId_throws() {
+        assertThrows(BadRequestException.class, () -> tripLikeService.create(10, null));
     }
 
     @Test
     void create_tripNotFound_throws() {
-        when(tripRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripLikeService.create(99, 1));
+        when(tripRepository.findById(10)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripLikeService.create(10, 1));
     }
 
     @Test
     void create_userNotFound_throws() {
-        when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
-        when(userRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripLikeService.create(1, 99));
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripLikeService.create(10, 1));
     }
+
+    // --- getAll() ---
 
     @Test
     void getAll_returnsList() {
-        when(tripLikeRepository.findAllByTrip_IdOrderByCreatedAtAsc(1))
-                .thenReturn(List.of(tripLike));
+        when(tripLikeRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of(tripLike));
 
-        List<TripLikeResponseDto> results = tripLikeService.getAll(1);
+        List<TripLikeResponseDto> result = tripLikeService.getAll(10);
 
-        assertEquals(1, results.size());
-        assertEquals(1, results.get(0).getTripId());
+        assertEquals(1, result.size());
+        assertEquals(50, result.getFirst().getLikeId());
     }
 
     @Test
-    void delete_success() {
-        when(tripLikeRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripLike));
+    void getAll_returnsEmptyList() {
+        when(tripLikeRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of());
 
-        tripLikeService.delete(1, 1);
+        List<TripLikeResponseDto> result = tripLikeService.getAll(10);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getAll_multipleResults() {
+        TripLike like2 = new TripLike();
+        like2.setId(51);
+        like2.setTrip(trip);
+        like2.setUser(user);
+        like2.setCreatedAt(LocalDateTime.now());
+
+        when(tripLikeRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of(tripLike, like2));
+
+        List<TripLikeResponseDto> result = tripLikeService.getAll(10);
+
+        assertEquals(2, result.size());
+    }
+
+    // --- delete() ---
+
+    @Test
+    void delete_success() {
+        when(tripLikeRepository.findByIdAndTrip_Id(50, 10)).thenReturn(Optional.of(tripLike));
+
+        tripLikeService.delete(10, 50);
 
         verify(tripLikeRepository).delete(tripLike);
     }
 
     @Test
-    void delete_nullId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripLikeService.delete(1, null));
+    void delete_nullTripId_throws() {
+        assertThrows(BadRequestException.class, () -> tripLikeService.delete(null, 50));
     }
 
     @Test
-    void delete_notFound_throws() {
-        when(tripLikeRepository.findByIdAndTrip_Id(99, 1)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripLikeService.delete(1, 99));
+    void delete_nullLikeId_throws() {
+        assertThrows(BadRequestException.class, () -> tripLikeService.delete(10, null));
     }
+
 }

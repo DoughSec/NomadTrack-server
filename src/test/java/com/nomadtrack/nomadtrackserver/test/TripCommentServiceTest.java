@@ -1,6 +1,7 @@
 package com.nomadtrack.nomadtrackserver.test;
 
 import com.nomadtrack.nomadtrackserver.exception.BadRequestException;
+import com.nomadtrack.nomadtrackserver.exception.ForbiddenException;
 import com.nomadtrack.nomadtrackserver.exception.ResourceNotFoundException;
 import com.nomadtrack.nomadtrackserver.model.Trip;
 import com.nomadtrack.nomadtrackserver.model.TripComment;
@@ -17,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,120 +28,199 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TripCommentServiceTest {
+
+    @Mock
+    private TripCommentRepository tripCommentRepository;
     @Mock
     private TripRepository tripRepository;
     @Mock
     private UserRepository userRepository;
-    @Mock
-    private TripCommentRepository tripCommentRepository;
 
     @InjectMocks
     private TripCommentService tripCommentService;
 
-    private Trip trip;
     private User user;
-    private TripComment tripComment;
+    private Trip trip;
+    private TripComment comment;
 
     @BeforeEach
     void setUp() {
-        trip = new Trip();
-        trip.setId(1);
         user = new User();
         user.setId(1);
-        tripComment = new TripComment();
-        tripComment.setId(1);
-        tripComment.setTrip(trip);
-        tripComment.setUser(user);
-        tripComment.setComment("Nice trip!");
+        user.setFirstName("John");
+        user.setLastName("Doe");
+
+        trip = new Trip();
+        trip.setId(10);
+
+        comment = new TripComment();
+        comment.setId(100);
+        comment.setTrip(trip);
+        comment.setUser(user);
+        comment.setComment("Hello World");
+        comment.setCreatedAt(LocalDateTime.now());
+        comment.setUpdatedAt(LocalDateTime.now());
     }
+
+    // --- create() ---
 
     @Test
     void create_success() {
-        when(tripRepository.findById(1)).thenReturn(Optional.of(trip));
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
+        when(tripCommentRepository.save(any(TripComment.class))).thenReturn(comment);
 
-        TripCommentResponseDto result = tripCommentService.create(1, 1, "Nice trip!");
+        TripCommentResponseDto result = tripCommentService.create(10, 1, "Hello World");
 
         assertNotNull(result);
-        assertEquals("Nice trip!", result.getComment());
-        assertEquals(1, result.getTripId());
+        assertEquals(100, result.getCommentId());
+        assertEquals(10, result.getTripId());
         assertEquals(1, result.getUserId());
-        verify(tripCommentRepository).save(any(TripComment.class));
+        assertEquals("Hello World", result.getComment());
+    }
+
+    @Test
+    void create_dtoContainsUserName() {
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(tripCommentRepository.save(any(TripComment.class))).thenReturn(comment);
+
+        TripCommentResponseDto result = tripCommentService.create(10, 1, "Hello World");
+
+        assertEquals("John", result.getUserFirstName());
+        assertEquals("Doe", result.getUserLastName());
     }
 
     @Test
     void create_nullUserId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripCommentService.create(1, null, "comment"));
+        assertThrows(BadRequestException.class, () -> tripCommentService.create(10, null, "text"));
     }
 
     @Test
     void create_nullTripId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripCommentService.create(null, 1, "comment"));
+        assertThrows(BadRequestException.class, () -> tripCommentService.create(null, 1, "text"));
     }
 
     @Test
     void create_tripNotFound_throws() {
-        when(tripRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripCommentService.create(99, 1, "comment"));
+        when(tripRepository.findById(10)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripCommentService.create(10, 1, "text"));
     }
+
+    @Test
+    void create_userNotFound_throws() {
+        when(tripRepository.findById(10)).thenReturn(Optional.of(trip));
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripCommentService.create(10, 1, "text"));
+    }
+
+    // --- getAll() ---
 
     @Test
     void getAll_returnsList() {
-        when(tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(1))
-                .thenReturn(List.of(tripComment));
+        when(tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of(comment));
 
-        List<TripCommentResponseDto> results = tripCommentService.getAll(1);
+        List<TripCommentResponseDto> result = tripCommentService.getAll(10);
 
-        assertEquals(1, results.size());
-        assertEquals(1, results.get(0).getTripId());
+        assertEquals(1, result.size());
+        assertEquals(100, result.getFirst().getCommentId());
     }
+
+    @Test
+    void getAll_returnsEmptyList() {
+        when(tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of());
+
+        List<TripCommentResponseDto> result = tripCommentService.getAll(10);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getAll_multipleComments() {
+        TripComment c2 = new TripComment();
+        c2.setId(101);
+        c2.setTrip(trip);
+        c2.setUser(user);
+        c2.setComment("Second comment");
+        c2.setCreatedAt(LocalDateTime.now());
+        c2.setUpdatedAt(LocalDateTime.now());
+
+        when(tripCommentRepository.findAllByTrip_IdOrderByCreatedAtAsc(10)).thenReturn(List.of(comment, c2));
+
+        List<TripCommentResponseDto> result = tripCommentService.getAll(10);
+
+        assertEquals(2, result.size());
+    }
+
+    // --- update() ---
 
     @Test
     void update_success() {
-        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
-        when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
-        when(tripCommentRepository.save(any(TripComment.class))).thenReturn(tripComment);
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.of(comment));
+        when(tripCommentRepository.findByIdAndTrip_Id(100, 10)).thenReturn(Optional.of(comment));
+        when(tripCommentRepository.save(any(TripComment.class))).thenReturn(comment);
 
-        TripCommentResponseDto result = tripCommentService.update(1, 1, 1, "Updated comment");
+        TripCommentResponseDto result = tripCommentService.update(10, 100, 1, "Updated text");
 
-        assertEquals("Updated comment", result.getComment());
-        verify(tripCommentRepository).save(any(TripComment.class));
+        assertNotNull(result);
+        verify(tripCommentRepository).save(comment);
     }
 
     @Test
-    void update_notFound_throws() {
-        when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripCommentService.update(1, 99, 1, "updated"));
+    void update_nullTripId_throws() {
+        assertThrows(BadRequestException.class, () -> tripCommentService.update(null, 100, 1, "text"));
     }
+
+    @Test
+    void update_nullCommentId_throws() {
+        assertThrows(BadRequestException.class, () -> tripCommentService.update(10, null, 1, "text"));
+    }
+
+    @Test
+    void update_commentNotFound_throws() {
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripCommentService.update(10, 100, 1, "text"));
+    }
+
+    @Test
+    void update_forbiddenUser_throws() {
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.of(comment));
+        assertThrows(ForbiddenException.class, () -> tripCommentService.update(10, 100, 99, "text"));
+    }
+
+    @Test
+    void update_commentNotOnTrip_throws() {
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.of(comment));
+        when(tripCommentRepository.findByIdAndTrip_Id(100, 10)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripCommentService.update(10, 100, 1, "text"));
+    }
+
+    // --- delete() ---
 
     @Test
     void delete_success() {
-        when(tripCommentRepository.findById(1)).thenReturn(Optional.of(tripComment));
-        when(tripCommentRepository.findByIdAndTrip_Id(1, 1)).thenReturn(Optional.of(tripComment));
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.of(comment));
+        when(tripCommentRepository.findByIdAndTrip_Id(100, 10)).thenReturn(Optional.of(comment));
 
-        tripCommentService.delete(1, 1, 1);
+        tripCommentService.delete(10, 1, 100);
 
-        verify(tripCommentRepository).delete(tripComment);
+        verify(tripCommentRepository).delete(comment);
     }
 
     @Test
-    void delete_nullId_throws() {
-        assertThrows(BadRequestException.class,
-                () -> tripCommentService.delete(1, 1, null));
+    void delete_nullTripId_throws() {
+        assertThrows(BadRequestException.class, () -> tripCommentService.delete(null, 1, 100));
     }
 
     @Test
-    void delete_notFound_throws() {
-        when(tripCommentRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> tripCommentService.delete(1, 1, 99));
+    void delete_nullCommentId_throws() {
+        assertThrows(BadRequestException.class, () -> tripCommentService.delete(10, 1, null));
     }
+
+    @Test
+    void delete_commentNotFound_throws() {
+        when(tripCommentRepository.findById(100)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> tripCommentService.delete(10, 1, 100));
+    }
+
 }
