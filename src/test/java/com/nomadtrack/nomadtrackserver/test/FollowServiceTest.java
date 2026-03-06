@@ -41,8 +41,15 @@ public class FollowServiceTest {
     void setUp() {
         follower = new User();
         follower.setId(1);
+        follower.setFirstName("Alice");
+        follower.setLastName("Smith");
+        follower.setAvatarUrl("alice.png");
+
         followee = new User();
         followee.setId(2);
+        followee.setFirstName("Bob");
+        followee.setLastName("Jones");
+        followee.setAvatarUrl("bob.png");
     }
 
     // --- follow() tests ---
@@ -64,6 +71,24 @@ public class FollowServiceTest {
         assertEquals(1, result.getFollowerId());
         assertEquals(2, result.getFolloweeId());
         verify(followRepository).save(any(Follow.class));
+    }
+
+    @Test
+    void follow_success_dtoContainsNames() {
+        when(followRepository.existsByFollower_IdAndFollowee_Id(1, 2)).thenReturn(false);
+        when(userRepository.findById(1)).thenReturn(Optional.of(follower));
+        when(userRepository.findById(2)).thenReturn(Optional.of(followee));
+        when(followRepository.save(any(Follow.class))).thenAnswer(i -> {
+            Follow f = i.getArgument(0);
+            f.setId(10);
+            return f;
+        });
+
+        FollowDto result = followService.follow(1, 2);
+
+        assertEquals("Alice", result.getFollowerFirstName());
+        assertEquals("Bob", result.getFolloweeFirstName());
+        assertEquals("alice.png", result.getFollowerAvatarUrl());
     }
 
     @Test
@@ -144,6 +169,11 @@ public class FollowServiceTest {
         assertFalse(followService.isFollowing(1, null));
     }
 
+    @Test
+    void isFollowing_bothNull_returnsFalse() {
+        assertFalse(followService.isFollowing(null, null));
+    }
+
     // --- getFollowing() / getFollowers() tests ---
 
     @Test
@@ -156,7 +186,16 @@ public class FollowServiceTest {
         List<FollowDto> result = followService.getFollowing(1);
 
         assertEquals(1, result.size());
-        assertEquals(1, result.get(0).getFollowerId());
+        assertEquals(1, result.getFirst().getFollowerId());
+    }
+
+    @Test
+    void getFollowing_emptyList() {
+        when(followRepository.findAllByFollower_Id(1)).thenReturn(List.of());
+
+        List<FollowDto> result = followService.getFollowing(1);
+
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -169,7 +208,31 @@ public class FollowServiceTest {
         List<FollowDto> result = followService.getFollowers(2);
 
         assertEquals(1, result.size());
-        assertEquals(2, result.get(0).getFolloweeId());
+        assertEquals(2, result.getFirst().getFolloweeId());
+    }
+
+    @Test
+    void getFollowers_emptyList() {
+        when(followRepository.findAllByFollowee_Id(2)).thenReturn(List.of());
+
+        List<FollowDto> result = followService.getFollowers(2);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getFollowers_dtoContainsCorrectData() {
+        Follow f = new Follow();
+        f.setId(5);
+        f.setFollower(follower);
+        f.setFollowee(followee);
+        when(followRepository.findAllByFollowee_Id(2)).thenReturn(List.of(f));
+
+        List<FollowDto> result = followService.getFollowers(2);
+
+        assertEquals("Alice", result.getFirst().getFollowerFirstName());
+        assertEquals("Bob", result.getFirst().getFolloweeFirstName());
+        assertEquals("bob.png", result.getFirst().getFolloweeAvatarUrl());
     }
 
     // --- countFollowers() / countFollowing() tests ---
@@ -196,5 +259,35 @@ public class FollowServiceTest {
     void countFollowing_noFollowing_returnsZero() {
         when(followRepository.findAllByFollower_Id(1)).thenReturn(List.of());
         assertEquals(0, followService.countFollowing(1));
+    }
+
+    @Test
+    void countFollowers_multipleFollowers() {
+        when(followRepository.findAllByFollowee_Id(2))
+                .thenReturn(List.of(new Follow(), new Follow(), new Follow()));
+        assertEquals(3, followService.countFollowers(2));
+    }
+
+    @Test
+    void getFollowing_multipleDtos() {
+        User user3 = new User();
+        user3.setId(3);
+        user3.setFirstName("Carol");
+        user3.setLastName("White");
+        user3.setAvatarUrl("carol.png");
+
+        Follow f1 = new Follow();
+        f1.setFollower(follower);
+        f1.setFollowee(followee);
+
+        Follow f2 = new Follow();
+        f2.setFollower(follower);
+        f2.setFollowee(user3);
+
+        when(followRepository.findAllByFollower_Id(1)).thenReturn(List.of(f1, f2));
+
+        List<FollowDto> result = followService.getFollowing(1);
+
+        assertEquals(2, result.size());
     }
 }
