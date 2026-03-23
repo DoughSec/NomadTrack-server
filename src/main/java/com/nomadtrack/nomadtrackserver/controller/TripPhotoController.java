@@ -40,6 +40,13 @@ public class TripPhotoController {
         return tripPhotoService.getAllByUserId(tripId, currentUserId.intValue());
     }
 
+    @GetMapping("/{tripId}/photos/public")
+    @ResponseStatus(HttpStatus.OK)
+    public List<TripPhotoResponseDto> getAllForTrip(@PathVariable("tripId") Integer tripId) {
+        return tripPhotoService.getAllByTripId(tripId);
+    }
+
+
     //delete TripPhoto record
     @DeleteMapping("/photos/{photoId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
