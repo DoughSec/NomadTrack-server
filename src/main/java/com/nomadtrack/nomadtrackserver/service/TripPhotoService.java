@@ -111,6 +111,14 @@ public class TripPhotoService {
                 .toList();
     }
 
+    //get all public photos by trip Id
+    public List<TripPhotoResponseDto> getAllByTripId(Integer tripId) {
+        List<TripPhoto> photos = tripPhotoRepository.findAllByTrip_IdOrderByCreatedAtAsc(tripId);
+
+        return photos.stream().map(this::toResponseDto).toList();
+    }
+
+
     // delete TripPhoto
     public void delete(Integer tripPhotoId) {
         if (tripPhotoId == null) {
@@ -137,4 +145,14 @@ public class TripPhotoService {
 
         tripPhotoRepository.deleteById(tripPhotoId);
     }
+
+    private TripPhotoResponseDto toResponseDto(TripPhoto photo) {
+        TripPhotoResponseDto dto = new TripPhotoResponseDto();
+        dto.setPhotoId(photo.getId());
+        dto.setUrl(photo.getUrl());
+        dto.setCaption(photo.getCaption());
+        dto.setSortOrder(photo.getSortOrder());
+        return dto;
+    }
+
 }
