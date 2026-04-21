@@ -28,7 +28,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
+//                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+//                    .requestMatchers("/nomadTrack/auth/**").permitAll()
+//                    .requestMatchers("/nomadTrack/recommendations/**").hasRole("USER")
+//                    .requestMatchers("/nomadTrack/trips/**").hasRole("USER")
+//                    .requestMatchers("/nomadTrack/wishlists/**").hasRole("USER")
+//                    .requestMatchers("/nomadTrack/follows/**").hasRole("USER")
+//                    .requestMatchers("/nomadTrack/users/**").hasAnyRole("USER","ADMIN")
+//                    .anyRequest().authenticated()
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
